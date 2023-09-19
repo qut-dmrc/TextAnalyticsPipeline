@@ -1,0 +1,18 @@
+# Google BigQuery Params
+servicekey_path: '' # Path to Google BigQuery Credentials
+
+# Project name, dataset name and table name (dataset to pull data from - leave blank if from_csv is True)
+project_name: ''
+dataset_name: ''
+tablename: ''
+
+id_column: 'comment_id'
+text_column: 'combined_text'
+
+from_database: True
+from_csv: False
+
+language: 'en'
+named_entity_recognition: False
+part_of_speech: True
+sentiment: False
