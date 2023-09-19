@@ -12,6 +12,10 @@ Key functionalities of the Text Analytics Pipeline include:
 
 The pipeline executes these processes and  transfers the cleaned and structured data to a designated Google BigQuery database.
 
+### Requirements
+- Python 3.10
+- Google BigQuery Service Account Key
+- 
 
 ### Installation
 1. Clone the repository `git clone [repo url]`

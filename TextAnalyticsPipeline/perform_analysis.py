@@ -36,19 +36,25 @@ def run_text_pipeline():
     gbq = BigQuery()
     inp = InputConf()
 
-    # Credentials
-    try:
-        gbq_creds = os.environ['gbq_servicekey']
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
-    except:
-        gbq_creds = gbq.servicekey_path
-        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
-
     project = gbq.project_name
     dataset = gbq.dataset_name
     table = gbq.tablename
     id_column = inp.id_column
     text_column = inp.text_column
+
+    # Credentials
+    try:
+        gbq_creds = os.environ['gbq_servicekey']
+        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
+    except:
+        # Check for Google access key; looks for .json service account key in the 'access_key' dir
+        servicekeypath = glob.glob(f'{os.getcwd()}/TextAnalyticsPipeline/access_key/*.json')
+        for potential_key in servicekeypath:
+            with open(potential_key, 'r') as f:
+                contents = f.read()
+                if f'"project_id": "{project}"' in contents:
+                    gbq_creds = potential_key
+                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
 
 
     # Client
