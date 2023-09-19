@@ -1,16 +1,17 @@
 # Text Analytics Pipeline
 
-This repository contains the code for the Text Analytics Pipeline. The pipeline is a collection of tools that can be used to extract information from text. The pipeline is built to utilise the following tools:
-- spaCy
-- NLTK
-- Stanza
+The Text Analytics Pipeline is a versatile toolkit that integrates several natural language processing libraries, including spaCy, NLTK, Stanza, and CoreNLP. Its primary purpose is to empower users to streamline the extraction, processing and storage of information from textual data.
 
-The pipeline can be used to extract information from text using the above libraries, to run various processes, including:
-- Named Entity Recognition
-- Part of Speech Tagging
-- Dependency Parsing
+Key functionalities of the Text Analytics Pipeline include:
 
-The pipeline runs the above processes and pushes the cleaned and structured data to a Google BigQuery database.
+1. **Named Entity Recognition (NER)**: Automatically identifies and categorizes entities such as names of people, places and organizations within the text.
+2. **Part of Speech Tagging (POS)**: Assigns grammatical parts of speech to each word in the text.
+3. **Dependency Parsing**: Analyzes the grammatical structure of sentences, establishing relationships between words and their dependencies.
+4. **TBC - sentiment analysis?**
+5. 
+
+The pipeline executes these processes and  transfers the cleaned and structured data to a designated Google BigQuery database.
+
 
 ### Installation
 1. Clone the repository `git clone [repo url]`
