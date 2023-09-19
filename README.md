@@ -24,6 +24,9 @@ Your specific use case will determine which library you use. For example, if you
 
 Run `run pipeline.py` to run the pipeline. 
 
+### Output
+Todo
+
 ### Collaborators
 Always git pull from the master branch. Ensure you git checkout collab_branch before you start working on the project.
 When you are done, push your changes to the collab_branch.
