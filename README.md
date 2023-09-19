@@ -21,3 +21,6 @@ The pipeline can be used to extract information from text using the above librar
 Your specific use case will determine which library you use. For example, if you want to use the pipeline to extract Named Entities from text, you can set your configuration in config.yml.
 
     
+### Collaborators
+Always git pull from the master branch. Ensure you git checkout collab_branch before you start working on the project.
+When you are done, push your changes to the collab_branch.
