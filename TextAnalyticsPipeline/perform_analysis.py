@@ -68,7 +68,7 @@ def run_text_pipeline():
     if database_import == True:
         # Prepare SQL query
         query_string = f"""
-            SELECT
+            SELECT DISTINCT
             {id_column}, {text_column}
             FROM `{project}.{dataset}.{table}`
             """
@@ -81,6 +81,7 @@ def run_text_pipeline():
         try:
             logging.info(f"Querying '{table}' table...")
             df = (bq.query(query_string).result().to_dataframe()).dropna(subset=text_column)
+            n_docs = len(df)
             logging.info(query_string)
             logging.info("Query successful\n")
         except exceptions.NotFound:
@@ -152,9 +153,10 @@ def run_text_pipeline():
         else:
             result_dfs = None
 
+        chunk = 5000
 
         # If result_dfs > 5000 rows, push to BigQuery, temp value for testing
-        if len(result_dfs) > 10:
+        if len(result_dfs) == chunk or count > n_docs - chunk:
             # If len(result_dfs[0] == 1, concatenate result_dfs[0], but if len(result_dfs[0]) > 1, concatenate all dfs in result_dfs[0]
             if len(result_dfs[0]) == 1:
                 # Concatenate entities dfs by getting the first item from each list in result_dfs
