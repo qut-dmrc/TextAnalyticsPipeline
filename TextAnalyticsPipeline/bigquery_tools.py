@@ -197,11 +197,11 @@ class PushTables:
 
             with open(f'TextAnalyticsPipeline/temp/temp_{proc}_stanza.csv', 'rb') as fh:
                 if database_import == True:
-                    if table_schema == Schema.ner_schema:
+                    if table_schema == StanzaSchema.ner_schema:
                         suff = '_named_entities'
-                    elif table_schema == Schema.sentences_schema:
+                    elif table_schema == StanzaSchema.sentences_schema:
                         suff = '_part_of_speech_'
-                    elif table_schema == Schema.dependencies_schema:
+                    elif table_schema == StanzaSchema.dependencies_schema:
                         suff = '_depparse_'
                     else:
                         suff = '_sentiment'
