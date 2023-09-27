@@ -6,6 +6,7 @@ Documentation: https://stanfordnlp.github.io/stanza/
 # Import Statements
 import stanza
 import os
+from os.path import exists
 import logging
 import glob
 
@@ -25,46 +26,70 @@ from .validate_params import ValidateParams
 
 # Google BigQuery Config
 # ----------------------------------------------------------------------------------------------------------------------
+def find_optimal_chunk_size(a, min_chunk_size=5000, max_chunk_size=10000):
+    # Start with the maximum allowed chunk size
+    chunk_size = max_chunk_size
 
+    # Iterate from the maximum allowed chunk size down to the minimum
+    while chunk_size >= min_chunk_size:
+        # Check if the dataframe length can be evenly divided by the current chunk size
+        if a % chunk_size == 0:
+            return chunk_size
+        chunk_size -= 1
+
+    # If no suitable chunk size is found, set it to min_chunk_size
+    return min_chunk_size
 
 
 def run_text_pipeline():
+    '''
+    Runs the text analysis pipeline; the starting point for the pipeline.
+    '''
 
+    # Set up logging (see set_up_logging.py)
     set_up_logging('TextAnalyticsPipeline/logs')
 
-    # Get Google BigQuery config
+    # Initialize config classes
     gbq = BigQuery()
     inp = InputConf()
 
+    # Get config details from config classes
     project = gbq.project_name
     dataset = gbq.dataset_name
     table = gbq.tablename
     id_column = inp.id_column
     text_column = inp.text_column
+    database_import = inp.from_database
 
-    # Credentials
+    # Get GBQ credentials from environment variables, or from local file in 'access_key' directory. If multiple keys exist, match with project id
     try:
         gbq_creds = os.environ['gbq_servicekey']
         os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
     except:
         # Check for Google access key; looks for .json service account key in the 'access_key' dir
         servicekeypath = glob.glob(f'{os.getcwd()}/TextAnalyticsPipeline/access_key/*.json')
-        for potential_key in servicekeypath:
-            with open(potential_key, 'r') as f:
-                contents = f.read()
-                if f'"project_id": "{project}"' in contents:
-                    gbq_creds = potential_key
-                    os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
 
+        if len(servicekeypath) > 0:
+            for potential_key in servicekeypath:
+                with open(potential_key, 'r') as f:
+                    contents = f.read()
+                    if f'"project_id": "{project}"' in contents:
+                        gbq_creds = potential_key
+                        os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
+                        break
+                    # If no matching key found, exit
+                    else:
+                        logging.info('No compatible Google BigQuery credentials found in /access_key. Exiting.')
+                        exit()
+        else:
+            logging.info('No Google BigQuery credentials found in /access_key. Exiting.')
+            exit()
 
-    # Client
+    # Initialise BigQuery client
     client = bigquery.Client()
     bq = Client(project=project)
 
-    database_import = inp.from_database
-
-
-
+    # If database_import is True, query BigQuery table. If False, read csv into dataframe
     if database_import == True:
         # Prepare SQL query
         query_string = f"""
@@ -108,16 +133,19 @@ def run_text_pipeline():
     identifiers = df[id_column].tolist()
     documents = df[text_column].tolist()
 
+    # Get the processor class to be used based on the config
     pc = ProcessorClass()
     processor_class, mwt, lang = pc.get_processor_class()
-
 
     # Initialize empty list to store entities dataframes
     result_dfs = []
 
     count = 0
     for id, document in zip(identifiers, documents):
+
+        # Count keeps track of the number of documents processed
         count = count + 1
+
         # Initialize English neural pipeline
         nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,{mwt}{processor_class}', download_method=None)
         doc = nlp(document)
@@ -153,11 +181,13 @@ def run_text_pipeline():
         else:
             result_dfs = None
 
-        chunk = 5000
+        # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
+        chunk = find_optimal_chunk_size(n_docs)
 
-        # If result_dfs > 5000 rows, push to BigQuery, temp value for testing
+        # If result_dfs > 5000 rows, OR if count(docs processed) is greater than the total n_docs - chunk (i.e. left over after chunks processed), push to BigQuery (remainders will be pushed one doc at a time)
         if len(result_dfs) == chunk or count > n_docs - chunk:
-            # If len(result_dfs[0] == 1, concatenate result_dfs[0], but if len(result_dfs[0]) > 1, concatenate all dfs in result_dfs[0]
+
+            # If len(result_dfs[0] == 1, this is NER. Concatenate result_dfs[0]
             if len(result_dfs[0]) == 1:
                 # Concatenate entities dfs by getting the first item from each list in result_dfs
 
@@ -176,6 +206,7 @@ def run_text_pipeline():
                 # empty result_dfs list
                 result_dfs = []
 
+            # But if len(result_dfs[0]) > 1, this is POS, DEPPARSE. Concatenate all dfs in result_dfs[0]
             else:
                 # Concatenate sentences dfs
                 result_dfs_sent = []
@@ -229,60 +260,5 @@ def run_text_pipeline():
                 logging.info('Dependencies successfully pushed to BigQuery!\n')
                 # empty result_dfs list
                 result_dfs = []
-
-            # finally:
-                # # push the remaining dfs to BigQuery
-                # # Concatenate sentences dfs
-                # result_dfs_sent = []
-                # for i in range(len(result_dfs)):
-                #     result_dfs_sent.append(result_dfs[i][0])
-                # sentences_dfs_concat = pd.concat(result_dfs_sent, axis=0)
-                #
-                # # Column order
-                # # Set sentences_df column order as Schema.sentences_column_order. If column not in df, add it and set value to nan
-                # sentences_column_order = Schema.sentences_column_order
-                # for column in sentences_column_order:
-                #     if column not in sentences_dfs_concat.columns:
-                #         sentences_dfs_concat[column] = pd.NA
-                # sentences_dfs_concat = sentences_dfs_concat[sentences_column_order]
-                #
-                # # Write sentences_df to csv
-                # logging.info('Writing sentences to csv...')
-                # sentences_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_sentences_stanza.csv', encoding='utf-8',
-                #                             index=False)
-                # records = len(sentences_dfs_concat)
-                # # Push sentences to BigQuery
-                # push_tables = PushTables()
-                # logging.info('Pushing sentences to BigQuery...')
-                # push_tables.push_to_gbq(database_import, bq, project, dataset, table, records,
-                #                         table_schema=StanzaSchema.sentences_schema, proc='sentences')
-                # logging.info('Sentences successfully pushed to BigQuery!\n')
-                #
-                # # Concatenate dependencies dfs
-                # result_dfs_depparse = []
-                # for i in range(len(result_dfs)):
-                #     result_dfs_depparse.append(result_dfs[i][1])
-                # dependencies_dfs_concat = pd.concat(result_dfs_depparse, axis=0)
-                #
-                # # Set dependencies_df column order as Schema.dependencies_column_order. If column not in df, add it and set value to nan
-                # dependencies_column_order = Schema.dependencies_column_order
-                # for column in dependencies_column_order:
-                #     if column not in dependencies_dfs_concat.columns:
-                #         dependencies_dfs_concat[column] = pd.NA
-                #
-                # dependencies_dfs_concat = dependencies_dfs_concat[dependencies_column_order]
-                # # Write dependencies_df to csv
-                # logging.info('Writing dependencies to csv...')
-                # dependencies_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_depparse_stanza.csv', encoding='utf-8',
-                #                                index=False)
-                # records = len(dependencies_dfs_concat)
-                # # Push dependencies to BigQuery
-                # push_tables = PushTables()
-                # logging.info('Pushing dependencies to BigQuery...')
-                # push_tables.push_to_gbq(database_import, bq, project, dataset, table, records,
-                #                         table_schema=StanzaSchema.dependencies_schema, proc='depparse')
-                # logging.info('Dependencies successfully pushed to BigQuery!\n')
-                # # empty result_dfs list
-                # result_dfs = []
 
     exit()
