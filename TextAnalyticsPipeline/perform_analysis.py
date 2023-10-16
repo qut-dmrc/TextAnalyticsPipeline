@@ -1,22 +1,29 @@
 '''
-Uses Stanza to detect entities in a body of text
-Documentation: https://stanfordnlp.github.io/stanza/
+Uses Stanza, Spacy and NLTK to process different text analysis tasks
+
+Documentation: 
+https://stanfordnlp.github.io/stanza/
+https://spacy.io/
+https://www.nltk.org/
+
 '''
 
 # Import Statements
 import stanza
+import spacy
+
 import os
 from os.path import exists
 import logging
 import glob
-
 import pandas as pd
+
 from google.cloud import bigquery
 from google.cloud.bigquery.client import Client
 from google.api_core import exceptions
 
 # local imports
-from .config import BigQuery, InputConf, ProcessorClass
+from .config import BigQuery, InputConf, ProcessorClass, Language, Library
 from .bigquery_tools import PushTables, StanzaSchema #, NLTKSchema, SpaCySchema
 from .data_processor import ProcessResults
 from .set_up_logging import set_up_logging
@@ -135,48 +142,86 @@ def run_text_pipeline():
 
     # Get the processor class to be used based on the config
     pc = ProcessorClass()
-    processor_class, mwt, lang = pc.get_processor_class()
+    processor_class = pc.get_processor_class()
+
+    # Get the language
+    lg = Language()
+    lang = lg.get_language()
+
+    # Get the library to be used based on the config
+    lb = Library()
+    library = lb.get_library()
 
     # Initialize empty list to store entities dataframes
     result_dfs = []
 
-    count = 0
-    for id, document in zip(identifiers, documents):
+    if library == 'stanza':
 
-        # Count keeps track of the number of documents processed
-        count = count + 1
-
-        # Initialize English neural pipeline
-        nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,{mwt}{processor_class}', download_method=None)
-        doc = nlp(document)
-
-        print(
-            f'Document ID: {id}\n',
-            f'Document Text: {document}'
-        )
-
-        # Initialize result processor
-        result_processor = ProcessResults()
+        # Initialize the Stanza model 
+        nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,mwt,{processor_class}', download_method=None)
 
         if processor_class == 'ner':
-            entities = doc.entities
-            table_schema = StanzaSchema.ner_schema
-            # Process document entities
-            logging.info('Processing documents for entity extraction...')
-            if len(doc.entities) > 0:
-                entities_df = result_processor.process_entities(id, entities)
-                result_dfs.append([entities_df])
-            else:
-                logging.info('No entities found in document.\n')
 
+                # Set table schema 
+                table_schema = StanzaSchema.ner_schema
+
+                count = 0
+                for id, document in zip(identifiers, documents):
+
+                    # Count keeps track of the number of documents processed
+                    count = count + 1
+
+                    # Process the document with the Stanza model
+                    doc = nlp(document)
+
+                    print(
+                        f'Document ID: {id}\n',
+                        f'Document Text: {document}'
+                    )
+                    
+                    # Extract the entities
+                    entities = doc.entities
+
+                    # Process document entities
+                    logging.info('Processing documents for entity extraction...')
+
+                    # Test if there is entities, and, if so, process them
+                    if len(entities) > 0:
+
+                        # Convert entities to dataframe and extract dictionary values
+                        df = pd.DataFrame(entities)
+                        
+                        # Transforming the stanza output to a dict
+                        df[0] = df[0].apply(lambda x: x.to_dict())
+
+                        # Extract values from dictionary
+                        df = pd.json_normalize(df[0])
+
+                        # Initialize result processor
+                        result_processor = ProcessResults()
+                        entities_df = result_processor.process_ner(id, df)
+                        result_dfs.append([entities_df])
+
+                    else:
+                        logging.info('No entities found in document.\n')
 
         elif processor_class == 'lemma, pos, depparse':
-            sentences = doc.sentences
-            table_schema = [StanzaSchema.sentences_schema, StanzaSchema.dependencies_schema]
-            # Process document sentences
-            logging.info('Processing sentences for part-of-speech extraction...')
-            sentences_df, dependencies_df = result_processor.process_sentences(id, sentences, count)
-            result_dfs.append([sentences_df, dependencies_df])
+
+                count = 0
+                for id, document in zip(identifiers, documents):
+
+                    # Count keeps track of the number of documents processed
+                    count = count + 1
+
+                    # Process the document with the Stanza model
+                    doc = nlp(document)
+
+                    sentences = doc.sentences
+                    table_schema = [StanzaSchema.sentences_schema, StanzaSchema.dependencies_schema]
+                    # Process document sentences
+                    logging.info('Processing sentences for part-of-speech extraction...')
+                    sentences_df, dependencies_df = result_processor.process_sentences(id, sentences, count)
+                    result_dfs.append([sentences_df, dependencies_df])
 
         else:
             result_dfs = None
@@ -189,8 +234,8 @@ def run_text_pipeline():
 
             # If len(result_dfs[0] == 1, this is NER. Concatenate result_dfs[0]
             if len(result_dfs[0]) == 1:
-                # Concatenate entities dfs by getting the first item from each list in result_dfs
 
+                # Concatenate entities dfs by getting the first item from each list in result_dfs
                 dfs_concat = [inner_list[0] for inner_list in result_dfs]
                 entities_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
 
@@ -201,7 +246,147 @@ def run_text_pipeline():
                 # Push entities to BigQuery
                 push_tables = PushTables()
                 logging.info('Pushing entities to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, proc='entities')
+                push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, library, proc='entities')
+                logging.info('Entities successfully pushed to BigQuery!\n')
+                # empty result_dfs list
+                result_dfs = []
+
+            # But if len(result_dfs[0]) > 1, this is POS, DEPPARSE. Concatenate all dfs in result_dfs[0]
+            else:
+                # Concatenate sentences dfs
+                result_dfs_sent = []
+                for i in range(len(result_dfs)):
+                    result_dfs_sent.append(result_dfs[i][0])
+                sentences_dfs_concat = pd.concat(result_dfs_sent, axis=0)
+
+                # Column order
+                # Set sentences_df column order as Schema.sentences_column_order. If column not in df, add it and set value to nan
+                sentences_column_order = StanzaSchema.sentences_column_order
+                for column in sentences_column_order:
+                    if column not in sentences_dfs_concat.columns:
+                        sentences_dfs_concat[column] = pd.NA
+                sentences_dfs_concat = sentences_dfs_concat[sentences_column_order]
+
+                # Write sentences_df to csv
+                logging.info('Writing sentences to csv...')
+                sentences_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_sentences_stanza.csv', encoding='utf-8', index=False)
+                records = len(sentences_dfs_concat)
+                # Push sentences to BigQuery
+                push_tables = PushTables()
+                logging.info('Pushing sentences to BigQuery...')
+                push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.sentences_schema, proc='sentences')
+                logging.info('Sentences successfully pushed to BigQuery!\n')
+
+                # Concatenate dependencies dfs
+                result_dfs_depparse = []
+                for i in range(len(result_dfs)):
+                    result_dfs_depparse.append(result_dfs[i][1])
+                dependencies_dfs_concat = pd.concat(result_dfs_depparse, axis=0)
+
+                # Set dependencies_df column order as Schema.dependencies_column_order. If column not in df, add it and set value to nan
+                dependencies_column_order = StanzaSchema.dependencies_column_order
+                for column in dependencies_column_order:
+                    if column not in dependencies_dfs_concat.columns:
+                        dependencies_dfs_concat[column] = pd.NA
+
+                dependencies_dfs_concat = dependencies_dfs_concat[dependencies_column_order]
+                # Write dependencies_df to csv
+                logging.info('Writing dependencies to csv...')
+                dependencies_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_depparse_stanza.csv', encoding='utf-8', index=False)
+                records = len(dependencies_dfs_concat)
+                # Push dependencies to BigQuery
+                push_tables = PushTables()
+                logging.info('Pushing dependencies to BigQuery...')
+                push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.dependencies_schema, proc='depparse')
+                logging.info('Dependencies successfully pushed to BigQuery!\n')
+                # empty result_dfs list
+                result_dfs = []
+
+    elif library == 'spacy':
+        
+        # Initialize the Spacy model 
+        nlp = spacy.load(f'{lang}_core_web_lg')
+        
+
+        if processor_class == 'ner':
+
+                # Set table schema 
+                table_schema = StanzaSchema.ner_schema
+
+                count = 0
+                for id, document in zip(identifiers, documents):
+
+                    # Count keeps track of the number of documents processed
+                    count = count + 1
+
+                    # Process the document with the Stanza model
+                    doc = nlp(document)
+
+                    print(
+                        f'Document ID: {id}\n',
+                        f'Document Text: {document}'
+                    )
+                    
+                    # Extract the entities
+                    entities = doc.ents
+
+                    # Process document entities
+                    logging.info('Processing documents for entity extraction...')
+
+                    # Test if there is entities, and, if so, process them
+                    if len(entities) > 0:
+
+                        # Create empty list to hold entities dictionaries
+                        entities_list = []
+
+                        # Get entities information
+                        for ent in entities:
+                            entities_list.append({
+                                'text': ent.text,
+                                'type': ent.label_,
+                                'start_char': ent.start_char,
+                                'end_char': ent.end_char,
+                            })
+
+                        # Convert entities list to dataframe
+                        df = pd.DataFrame(entities_list)
+
+                        # Initialize result processor
+                        result_processor = ProcessResults()
+                        entities_df = result_processor.process_ner(id, df)
+                        result_dfs.append([entities_df])
+
+                    else:
+                        logging.info('No entities found in document.\n')
+
+
+        elif processor_class == 'lemma, pos':
+            
+            # Load the Spacy model (outside the loop to improve performance)
+            nlp = spacy.load(f'{lang}_core_web_lg')
+
+        
+        # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
+        chunk = find_optimal_chunk_size(n_docs)
+
+        # If result_dfs > 5000 rows, OR if count(docs processed) is greater than the total n_docs - chunk (i.e. left over after chunks processed), push to BigQuery (remainders will be pushed one doc at a time)
+        if len(result_dfs) == chunk or count > n_docs - chunk:
+
+            # If len(result_dfs[0] == 1, this is NER. Concatenate result_dfs[0]
+            if len(result_dfs[0]) == 1:
+
+                # Concatenate entities dfs by getting the first item from each list in result_dfs
+                dfs_concat = [inner_list[0] for inner_list in result_dfs]
+                entities_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
+
+                # Write entities_df to csv
+                logging.info('Writing entities to csv...')
+                entities_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_entities_stanza.csv', encoding='utf-8', index=False)
+
+                # Push entities to BigQuery
+                push_tables = PushTables()
+                logging.info('Pushing entities to BigQuery...')
+                push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, library, proc='entities')
                 logging.info('Entities successfully pushed to BigQuery!\n')
                 # empty result_dfs list
                 result_dfs = []

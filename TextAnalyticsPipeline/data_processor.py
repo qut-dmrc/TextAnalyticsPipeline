@@ -5,7 +5,7 @@ import pandas as pd
 
 class ProcessResults:
 
-    def process_entities(self, id, entities):
+    def process_ner(self, id, df):
         '''
         For Named Entity Recognition: Processes the results into a table with the following columns:
             - identifier
@@ -14,14 +14,7 @@ class ProcessResults:
             - start_char
             - end_char
         '''
-        # Convert entities to dataframe and extract dictionary values
-        df = pd.DataFrame(entities)
-
-        df[0] = df[0].apply(lambda x: x.to_dict())
-
-        # Extract values from dictionary
-        df = pd.json_normalize(df[0])
-
+        
         # Concatenate id column values and entities_df as new dataframe
         id_list = [id] * len(df)
         entities_df = pd.concat([pd.DataFrame(id_list), df], axis=1)

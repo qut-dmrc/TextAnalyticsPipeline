@@ -162,7 +162,7 @@ class StanzaSchema:
 
 class PushTables:
 
-    def push_to_gbq(self, database_import, bq, project, dataset, table, records, table_schema, proc):
+    def push_to_gbq(self, database_import, bq, project, dataset, table, table_schema, library, proc):
         dataset = f"{project}.{dataset}"
         schema = table_schema
 
@@ -208,11 +208,12 @@ class PushTables:
                 else:
                     suff = ''
 
-                job = bq.load_table_from_file(fh, f'{dataset}.{table}{suff}', job_config=job_config)
+                job = bq.load_table_from_file(fh, f'{dataset}.{table}_{library}_{suff}', job_config=job_config)
                 job.result()  # Waits for the job to complete.
 
             table = bq.get_table(table_id)
             logging.info(
-                f"Loaded {records} rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}{suff}")
+                f"Loaded records rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}{suff}")
+                # Todo (Records)
 
             os.remove(f'TextAnalyticsPipeline/temp/temp_{proc}_stanza.csv')
