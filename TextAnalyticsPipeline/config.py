@@ -14,7 +14,6 @@ except yaml.YAMLError:
     print("\nDetected an issue with your config.")
 
 
-
 class BigQuery:
     try:
         gbq_creds = os.environ['gbq_servicekey']

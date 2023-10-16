@@ -214,7 +214,6 @@ def run_text_pipeline():
                     result_dfs_sent.append(result_dfs[i][0])
                 sentences_dfs_concat = pd.concat(result_dfs_sent, axis=0)
 
-
                 # Column order
                 # Set sentences_df column order as Schema.sentences_column_order. If column not in df, add it and set value to nan
                 sentences_column_order = StanzaSchema.sentences_column_order
@@ -233,14 +232,11 @@ def run_text_pipeline():
                 push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.sentences_schema, proc='sentences')
                 logging.info('Sentences successfully pushed to BigQuery!\n')
 
-
                 # Concatenate dependencies dfs
                 result_dfs_depparse = []
                 for i in range(len(result_dfs)):
                     result_dfs_depparse.append(result_dfs[i][1])
                 dependencies_dfs_concat = pd.concat(result_dfs_depparse, axis=0)
-
-
 
                 # Set dependencies_df column order as Schema.dependencies_column_order. If column not in df, add it and set value to nan
                 dependencies_column_order = StanzaSchema.dependencies_column_order
