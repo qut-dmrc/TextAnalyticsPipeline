@@ -24,7 +24,7 @@ from google.api_core import exceptions
 
 # local imports
 from .config import BigQuery, InputConf, ProcessorClass, Language, Library
-from .bigquery_tools import PushTables, StanzaSchema #, NLTKSchema, SpaCySchema
+from .bigquery_tools import PushTables, Schema #, NLTKSchema, SpaCySchema
 from .data_processor import ProcessResults
 from .set_up_logging import set_up_logging
 from .validate_params import ValidateParams
@@ -46,7 +46,6 @@ def find_optimal_chunk_size(a, min_chunk_size=5000, max_chunk_size=10000):
 
     # If no suitable chunk size is found, set it to min_chunk_size
     return min_chunk_size
-
 
 def run_text_pipeline():
     '''
@@ -142,7 +141,7 @@ def run_text_pipeline():
 
     # Get the processor class to be used based on the config
     pc = ProcessorClass()
-    processor_class = pc.get_processor_class()
+    processor_class, processor_name = pc.get_processor_class()
 
     # Get the language
     lg = Language()
@@ -160,10 +159,10 @@ def run_text_pipeline():
         # Initialize the Stanza model 
         nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,mwt,{processor_class}', download_method=None)
 
-        if processor_class == 'ner':
+        if processor_name == 'ner':
 
                 # Set table schema 
-                table_schema = StanzaSchema.ner_schema
+                table_schema = Schema.ner_schema
 
                 count = 0
                 for id, document in zip(identifiers, documents):
@@ -199,13 +198,54 @@ def run_text_pipeline():
 
                         # Initialize result processor
                         result_processor = ProcessResults()
+
+                        # Run processor
                         entities_df = result_processor.process_ner(id, df)
+
+                        # Append results
                         result_dfs.append([entities_df])
 
                     else:
                         logging.info('No entities found in document.\n')
 
-        elif processor_class == 'lemma, pos, depparse':
+        elif processor_name == 'pos':
+
+                # Set table schema 
+                table_schema = Schema.pos_schema
+
+                count = 0
+                for id, document in zip(identifiers, documents):
+                    
+                    # Count keeps track of the number of documents processed
+                    count = count + 1
+
+                    # Process the document with the Stanza model
+                    doc = nlp(document)
+
+                    # Extract the sentences
+                    sentences = doc.sentences
+
+                    # Process document part-of-speech tagging
+                    logging.info('Processing documents for part-of-speech extraction...')
+
+                    # Initialize result processor
+                    result_processor = ProcessResults()
+
+                    data = []
+                    for sent_id, sentence in enumerate(doc.sentences, start=1):
+                        for word_id, word in enumerate(sentence.words, start=1):
+                            data.append([sent_id, word.id, f'{id}_{sent_id}_{word.id}', word.text, word.lemma, word.upos, word.xpos, word.start_char, word.end_char])
+                            
+                    columns = ['sentence_num', 'word_num', 'word_id', 'word', 'lemma', 'upos', 'xpos', 'start_char', 'end_char']
+                    df = pd.DataFrame(data, columns=columns)
+
+                    # Run processor
+                    pos_df = result_processor.process_pos(id, df)
+
+                    # Append results
+                    result_dfs.append([pos_df])
+
+        elif processor_name == 'depparse':
 
                 count = 0
                 for id, document in zip(identifiers, documents):
@@ -217,7 +257,7 @@ def run_text_pipeline():
                     doc = nlp(document)
 
                     sentences = doc.sentences
-                    table_schema = [StanzaSchema.sentences_schema, StanzaSchema.dependencies_schema]
+                    table_schema = [Schema.pos_schema, Schema.dependencies_schema]
                     # Process document sentences
                     logging.info('Processing sentences for part-of-speech extraction...')
                     sentences_df, dependencies_df = result_processor.process_sentences(id, sentences, count)
@@ -226,92 +266,15 @@ def run_text_pipeline():
         else:
             result_dfs = None
 
-        # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
-        chunk = find_optimal_chunk_size(n_docs)
-
-        # If result_dfs > 5000 rows, OR if count(docs processed) is greater than the total n_docs - chunk (i.e. left over after chunks processed), push to BigQuery (remainders will be pushed one doc at a time)
-        if len(result_dfs) == chunk or count > n_docs - chunk:
-
-            # If len(result_dfs[0] == 1, this is NER. Concatenate result_dfs[0]
-            if len(result_dfs[0]) == 1:
-
-                # Concatenate entities dfs by getting the first item from each list in result_dfs
-                dfs_concat = [inner_list[0] for inner_list in result_dfs]
-                entities_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
-
-                # Write entities_df to csv
-                logging.info('Writing entities to csv...')
-                entities_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_entities_stanza.csv', encoding='utf-8', index=False)
-
-                # Push entities to BigQuery
-                push_tables = PushTables()
-                logging.info('Pushing entities to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, library, proc='entities')
-                logging.info('Entities successfully pushed to BigQuery!\n')
-                # empty result_dfs list
-                result_dfs = []
-
-            # But if len(result_dfs[0]) > 1, this is POS, DEPPARSE. Concatenate all dfs in result_dfs[0]
-            else:
-                # Concatenate sentences dfs
-                result_dfs_sent = []
-                for i in range(len(result_dfs)):
-                    result_dfs_sent.append(result_dfs[i][0])
-                sentences_dfs_concat = pd.concat(result_dfs_sent, axis=0)
-
-                # Column order
-                # Set sentences_df column order as Schema.sentences_column_order. If column not in df, add it and set value to nan
-                sentences_column_order = StanzaSchema.sentences_column_order
-                for column in sentences_column_order:
-                    if column not in sentences_dfs_concat.columns:
-                        sentences_dfs_concat[column] = pd.NA
-                sentences_dfs_concat = sentences_dfs_concat[sentences_column_order]
-
-                # Write sentences_df to csv
-                logging.info('Writing sentences to csv...')
-                sentences_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_sentences_stanza.csv', encoding='utf-8', index=False)
-                records = len(sentences_dfs_concat)
-                # Push sentences to BigQuery
-                push_tables = PushTables()
-                logging.info('Pushing sentences to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.sentences_schema, proc='sentences')
-                logging.info('Sentences successfully pushed to BigQuery!\n')
-
-                # Concatenate dependencies dfs
-                result_dfs_depparse = []
-                for i in range(len(result_dfs)):
-                    result_dfs_depparse.append(result_dfs[i][1])
-                dependencies_dfs_concat = pd.concat(result_dfs_depparse, axis=0)
-
-                # Set dependencies_df column order as Schema.dependencies_column_order. If column not in df, add it and set value to nan
-                dependencies_column_order = StanzaSchema.dependencies_column_order
-                for column in dependencies_column_order:
-                    if column not in dependencies_dfs_concat.columns:
-                        dependencies_dfs_concat[column] = pd.NA
-
-                dependencies_dfs_concat = dependencies_dfs_concat[dependencies_column_order]
-                # Write dependencies_df to csv
-                logging.info('Writing dependencies to csv...')
-                dependencies_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_depparse_stanza.csv', encoding='utf-8', index=False)
-                records = len(dependencies_dfs_concat)
-                # Push dependencies to BigQuery
-                push_tables = PushTables()
-                logging.info('Pushing dependencies to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.dependencies_schema, proc='depparse')
-                logging.info('Dependencies successfully pushed to BigQuery!\n')
-                # empty result_dfs list
-                result_dfs = []
-
     elif library == 'spacy':
         
         # Initialize the Spacy model 
         nlp = spacy.load(f'{lang}_core_web_lg')
         
-
-        if processor_class == 'ner':
+        if processor_name == 'ner':
 
                 # Set table schema 
-                table_schema = StanzaSchema.ner_schema
+                table_schema = Schema.ner_schema
 
                 count = 0
                 for id, document in zip(identifiers, documents):
@@ -319,7 +282,7 @@ def run_text_pipeline():
                     # Count keeps track of the number of documents processed
                     count = count + 1
 
-                    # Process the document with the Stanza model
+                    # Process the document with the Spacy model
                     doc = nlp(document)
 
                     print(
@@ -353,93 +316,83 @@ def run_text_pipeline():
 
                         # Initialize result processor
                         result_processor = ProcessResults()
+
+                        # Run processor
                         entities_df = result_processor.process_ner(id, df)
+
+                        # Append results
                         result_dfs.append([entities_df])
 
                     else:
                         logging.info('No entities found in document.\n')
 
-
-        elif processor_class == 'lemma, pos':
+        elif processor_name == 'pos':
             
-            # Load the Spacy model (outside the loop to improve performance)
-            nlp = spacy.load(f'{lang}_core_web_lg')
+            # Set table schema 
+            table_schema = Schema.pos_schema
 
-        
-        # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
-        chunk = find_optimal_chunk_size(n_docs)
+            count = 0
+            for id, document in zip(identifiers, documents):
+                
+                # Count keeps track of the number of documents processed
+                count = count + 1
 
-        # If result_dfs > 5000 rows, OR if count(docs processed) is greater than the total n_docs - chunk (i.e. left over after chunks processed), push to BigQuery (remainders will be pushed one doc at a time)
-        if len(result_dfs) == chunk or count > n_docs - chunk:
+                # Process the document with the Spacy model
+                doc = nlp(document)
 
-            # If len(result_dfs[0] == 1, this is NER. Concatenate result_dfs[0]
-            if len(result_dfs[0]) == 1:
+                # Process document part-of-speech tagging
+                logging.info('Processing documents for part-of-speech extraction...')
 
-                # Concatenate entities dfs by getting the first item from each list in result_dfs
-                dfs_concat = [inner_list[0] for inner_list in result_dfs]
-                entities_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
+                # Initialize result processor
+                result_processor = ProcessResults()
 
-                # Write entities_df to csv
-                logging.info('Writing entities to csv...')
-                entities_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_entities_stanza.csv', encoding='utf-8', index=False)
+                # Create empty list to hold tokens dictionaries
+                tokens_list = []
 
-                # Push entities to BigQuery
-                push_tables = PushTables()
-                logging.info('Pushing entities to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, library, proc='entities')
-                logging.info('Entities successfully pushed to BigQuery!\n')
-                # empty result_dfs list
-                result_dfs = []
+                # Get entities information
+                for token in doc:
+                    tokens_list.append({
+                        'sentence_num': 9999,
+                        'word_num': token.i,
+                        'word_id': f'{id}_{token.sent}_{token.i}',
+                        'word': token.text,
+                        'lemma': token.lemma_,
+                        'upos': token.pos_,
+                        'xpos': '',
+                        'start_char': 0,
+                        'end_char': 0
+                    })
 
-            # But if len(result_dfs[0]) > 1, this is POS, DEPPARSE. Concatenate all dfs in result_dfs[0]
-            else:
-                # Concatenate sentences dfs
-                result_dfs_sent = []
-                for i in range(len(result_dfs)):
-                    result_dfs_sent.append(result_dfs[i][0])
-                sentences_dfs_concat = pd.concat(result_dfs_sent, axis=0)
+                # Convert tokens_list = to dataframe
+                df = pd.DataFrame(tokens_list)
 
-                # Column order
-                # Set sentences_df column order as Schema.sentences_column_order. If column not in df, add it and set value to nan
-                sentences_column_order = StanzaSchema.sentences_column_order
-                for column in sentences_column_order:
-                    if column not in sentences_dfs_concat.columns:
-                        sentences_dfs_concat[column] = pd.NA
-                sentences_dfs_concat = sentences_dfs_concat[sentences_column_order]
+                # Run processor
+                pos_df = result_processor.process_pos(id, df)
 
-                # Write sentences_df to csv
-                logging.info('Writing sentences to csv...')
-                sentences_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_sentences_stanza.csv', encoding='utf-8', index=False)
-                records = len(sentences_dfs_concat)
-                # Push sentences to BigQuery
-                push_tables = PushTables()
-                logging.info('Pushing sentences to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.sentences_schema, proc='sentences')
-                logging.info('Sentences successfully pushed to BigQuery!\n')
+                # Append results
+                result_dfs.append([pos_df])
 
-                # Concatenate dependencies dfs
-                result_dfs_depparse = []
-                for i in range(len(result_dfs)):
-                    result_dfs_depparse.append(result_dfs[i][1])
-                dependencies_dfs_concat = pd.concat(result_dfs_depparse, axis=0)
+    # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
+    chunk = find_optimal_chunk_size(n_docs)
 
-                # Set dependencies_df column order as Schema.dependencies_column_order. If column not in df, add it and set value to nan
-                dependencies_column_order = StanzaSchema.dependencies_column_order
-                for column in dependencies_column_order:
-                    if column not in dependencies_dfs_concat.columns:
-                        dependencies_dfs_concat[column] = pd.NA
+    # If result_dfs > 5000 rows, OR if count(docs processed) is greater than the total n_docs - chunk (i.e. left over after chunks processed), push to BigQuery (remainders will be pushed one doc at a time)
+    if len(result_dfs) == chunk or count > n_docs - chunk:
 
-                dependencies_dfs_concat = dependencies_dfs_concat[dependencies_column_order]
-                # Write dependencies_df to csv
-                logging.info('Writing dependencies to csv...')
-                dependencies_dfs_concat.to_csv('TextAnalyticsPipeline/temp/temp_depparse_stanza.csv', encoding='utf-8', index=False)
-                records = len(dependencies_dfs_concat)
-                # Push dependencies to BigQuery
-                push_tables = PushTables()
-                logging.info('Pushing dependencies to BigQuery...')
-                push_tables.push_to_gbq(database_import, bq, project, dataset, table, records, table_schema=StanzaSchema.dependencies_schema, proc='depparse')
-                logging.info('Dependencies successfully pushed to BigQuery!\n')
-                # empty result_dfs list
-                result_dfs = []
+        # Concatenate dfs by getting the first item from each list in result_dfs
+        dfs_concat = [inner_list[0] for inner_list in result_dfs]
+        results_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
+
+        # Write entities_df to csv
+        logging.info(f'Writing {processor_name} to csv...')
+        results_dfs_concat.to_csv(f'TextAnalyticsPipeline/temp/temp_{processor_name}_{library}.csv', encoding='utf-8', index=False)
+
+        # Push entities to BigQuery
+        push_tables = PushTables()
+        logging.info(f'Pushing {processor_name} to BigQuery...')
+        push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, library, proc=f'{processor_name}')
+        logging.info(f'{processor_name} successfully pushed to BigQuery!\n')
+
+        # empty result_dfs list
+        result_dfs = []
 
     exit()

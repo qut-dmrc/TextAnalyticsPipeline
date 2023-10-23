@@ -1,0 +1,8 @@
+2023-10-23 15:29:49,539 [INFO] Querying 'facebook_posts_australia' table...
+2023-10-23 15:29:52,727 [INFO] 
+            SELECT DISTINCT
+            platformId, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.facebook_posts_australia`
+            
+2023-10-23 15:29:52,727 [INFO] Query successful
+

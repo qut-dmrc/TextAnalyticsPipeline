@@ -44,14 +44,19 @@ class ProcessorClass:
         # If any of ner, pos, depparse, or sentiment are True, then set processor_class to whichever is True
         if ner == True:
             processor_class = 'ner'
+            processor_name = 'ner'
         elif pos == True:
             processor_class = 'lemma, pos'
+            processor_name = 'pos'
         elif depparse == True:
             processor_class = 'lemma, pos, depparse'
+            processor_name = 'depparse'
         elif sentiment == True:
             processor_class = 'sentiment'
+            processor_name = 'sentiment'
         else:
             processor_class = None
+            processor_name = None
 
         # If more than once of processor_class is True, then exit
         if [ner, pos, depparse, sentiment].count(True) > 1:
@@ -60,7 +65,7 @@ class ProcessorClass:
         else:
             pass
 
-        return processor_class
+        return processor_class, processor_name
     
 class Language:
 

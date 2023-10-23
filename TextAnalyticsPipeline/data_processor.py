@@ -18,10 +18,35 @@ class ProcessResults:
         # Concatenate id column values and entities_df as new dataframe
         id_list = [id] * len(df)
         entities_df = pd.concat([pd.DataFrame(id_list), df], axis=1)
-        entities_df.columns = entities_df.columns = ['identifier', 'text', 'type', 'start_char', 'end_char']
+        entities_df.columns = ['identifier', 'text', 'type', 'start_char', 'end_char']
 
         return entities_df
+    
+    def process_pos(self, id, df):
+        '''
+        For Part of Speech: Processes the results into a table with the following columns:
+            'identifier',
+            'sentence_num',
+            'word_num',
+            'word_id',
+            'word',
+            'lemma',
+            'upos',
+            'xpos',
+            'start_char',
+            'end_char',
+        '''
+        # Concatenate id column values and entities_df as new dataframe
+        id_list = [id] * len(df)
+        pos_df = pd.concat([pd.DataFrame(id_list), df], axis=1)
+        pos_df.columns = ['identifier', 'sentence_num', 'word_num', 'word_id', 'word', 'lemma', 'upos', 'xpos', 'start_char', 'end_char']
 
+        return pos_df
+
+    def process_depparse(self, id, sentences, count):
+
+        return self
+    
     def process_sentences(self, id, sentences, count):
 
         '''
@@ -108,8 +133,6 @@ class ProcessResults:
         dependencies_df = pd.concat([dependencies_df, pd.json_normalize(dependencies_df['head_feats']).add_prefix('head_feats_')], axis=1)
         dependencies_df['word_id'] = dependencies_df['identifier'].astype(str) + '_' + dependencies_df['sentence_num'].astype(str) + '_' + dependencies_df['word_num'].astype(str)
         dependencies_df = dependencies_df.drop(columns=['head_feats'])
-
-
 
         return sentences_df, dependencies_df
 

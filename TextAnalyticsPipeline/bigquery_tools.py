@@ -13,7 +13,7 @@ from .config import BigQuery
 from .set_up_logging import *
 
 
-class StanzaSchema:
+class Schema:
 
     # Named Entity Recognition schema
     ner_schema = [
@@ -24,7 +24,7 @@ class StanzaSchema:
         bigquery.SchemaField("end_char", "INTEGER", mode="NULLABLE", description="Location of end character of entity in input string.")
     ]
 
-    # Column order for named entities table
+    # Column order for Named Entity Recognition table
     ner_column_order = [
         'identifier',
         'text',
@@ -34,7 +34,7 @@ class StanzaSchema:
     ]
 
     # Part of Speech Tagging schema
-    sentences_schema = [
+    pos_schema = [
         bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
         bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
         bigquery.SchemaField('word_num', 'INTEGER', description='Word number in the sentence'),
@@ -43,27 +43,26 @@ class StanzaSchema:
         bigquery.SchemaField('lemma', 'STRING', description='Lemma of the word'),
         bigquery.SchemaField('upos', 'STRING', description='Universal Part-of-Speech tag'),
         bigquery.SchemaField('xpos', 'STRING', description='Language-specific Part-of-Speech tag'),
-        bigquery.SchemaField('head', 'STRING', description='Head word identifier'),
-        bigquery.SchemaField('deprel', 'STRING', description='Dependency relation to the head word'),
         bigquery.SchemaField('start_char', 'INTEGER', description='Start character position in text'),
         bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text'),
-        bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
-        bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
-        bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
-        bigquery.SchemaField('features_Tense', 'STRING', description='Tense feature'),
-        bigquery.SchemaField('features_VerbForm', 'STRING', description='Verb form feature'),
-        bigquery.SchemaField('features_Case', 'STRING', description='Case feature'),
-        bigquery.SchemaField('features_Gender', 'STRING', description='Gender feature'),
-        bigquery.SchemaField('features_PronType', 'STRING', description='Pronoun type feature'),
-        bigquery.SchemaField('features_Degree', 'STRING', description='Degree feature'),
-        bigquery.SchemaField('features_Definite', 'STRING', description='Definite feature'),
-        bigquery.SchemaField('features_NumForm', 'STRING', description='Number form feature'),
-        bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
-        bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature')
     ]
 
-    # Column order for sentences table
-    sentences_column_order = [
+        # bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
+        # bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
+        # bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
+        # bigquery.SchemaField('features_Tense', 'STRING', description='Tense feature'),
+        # bigquery.SchemaField('features_VerbForm', 'STRING', description='Verb form feature'),
+        # bigquery.SchemaField('features_Case', 'STRING', description='Case feature'),
+        # bigquery.SchemaField('features_Gender', 'STRING', description='Gender feature'),
+        # bigquery.SchemaField('features_PronType', 'STRING', description='Pronoun type feature'),
+        # bigquery.SchemaField('features_Degree', 'STRING', description='Degree feature'),
+        # bigquery.SchemaField('features_Definite', 'STRING', description='Definite feature'),
+        # bigquery.SchemaField('features_NumForm', 'STRING', description='Number form feature'),
+        # bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
+        # bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature')
+
+    # Column order for Part of Speech Tagging table
+    pos_column_order = [
         'identifier',
         'sentence_num',
         'word_num',
@@ -72,8 +71,6 @@ class StanzaSchema:
         'lemma',
         'upos',
         'xpos',
-        'head',
-        'deprel',
         'start_char',
         'end_char',
         'features_Number',
@@ -124,7 +121,7 @@ class StanzaSchema:
         bigquery.SchemaField('head_feats_Voice', 'STRING', description='Target word Voice feature')
     ]
 
-    # Column order for dependencies table
+    # Column order for Dependency Parsing table
     dependencies_column_order = [
         'identifier',
         'sentence_num',
@@ -158,11 +155,10 @@ class StanzaSchema:
     ]
 
 
-
-
 class PushTables:
 
     def push_to_gbq(self, database_import, bq, project, dataset, table, table_schema, library, proc):
+
         dataset = f"{project}.{dataset}"
         schema = table_schema
 
@@ -175,7 +171,7 @@ class PushTables:
             bq.create_dataset(dataset)
             logging.info(f"Created new dataset: {dataset}")
 
-        if os.path.isfile(f'TextAnalyticsPipeline/temp/temp_{proc}_stanza.csv') == True:
+        if os.path.isfile(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv') == True:
             logging.info('Pushing temp file to BigQuery dataset...')
 
             table_id = bigquery.Table(f'{dataset}.{table}')
@@ -195,16 +191,16 @@ class PushTables:
 
             job_config.allow_quoted_newlines = True
 
-            with open(f'TextAnalyticsPipeline/temp/temp_{proc}_stanza.csv', 'rb') as fh:
+            with open(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv', 'rb') as fh:
                 if database_import == True:
-                    if table_schema == StanzaSchema.ner_schema:
-                        suff = '_named_entities'
-                    elif table_schema == StanzaSchema.sentences_schema:
-                        suff = '_part_of_speech_'
-                    elif table_schema == StanzaSchema.dependencies_schema:
-                        suff = '_depparse_'
+                    if table_schema == Schema.ner_schema:
+                        suff = 'named_entities'
+                    elif table_schema == Schema.pos_schema:
+                        suff = 'part_of_speech'
+                    elif table_schema == Schema.dependencies_schema:
+                        suff = 'depparse'
                     else:
-                        suff = '_sentiment'
+                        suff = 'sentiment'
                 else:
                     suff = ''
 
@@ -213,7 +209,7 @@ class PushTables:
 
             table = bq.get_table(table_id)
             logging.info(
-                f"Loaded records rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}{suff}")
+                f"Loaded records rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}_{library}_{suff}")
                 # Todo (Records)
 
-            os.remove(f'TextAnalyticsPipeline/temp/temp_{proc}_stanza.csv')
+            os.remove(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv')
