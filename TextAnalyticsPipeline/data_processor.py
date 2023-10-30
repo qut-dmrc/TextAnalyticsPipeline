@@ -43,9 +43,32 @@ class ProcessResults:
 
         return pos_df
 
-    def process_depparse(self, id, sentences, count):
+    def process_depparse(self, id, df):
+        '''
+        For Dependency Parsing: Processes the results into a table with the following columns:
+            'identifier',
+            'sentence_num',
+            'word_num', 
+            'word_id',
+            'word_text',
+            'word_lemma',
+            'word_start_char',
+            'word_end_char',
+            'relation',
+            'head_num',
+            'head_id',
+            'head_text',
+            'head_lemma',
+            'head_start_char',
+            'head_end_char'
+        '''
 
-        return self
+        # Concatenate id column values and entities_df as new dataframe
+        id_list = [id] * len(df)
+        depparse_df = pd.concat([pd.DataFrame(id_list), df], axis=1)
+        depparse_df.columns = ['identifier', 'sentence_num', 'word_num', 'word_id', 'word_text', 'word_lemma', 'word_start_char', 'word_end_char', 'relation', 'head_num', 'head_id', 'head_text', 'head_lemma', 'head_start_char', 'head_end_char']
+
+        return depparse_df
     
     def process_sentences(self, id, sentences, count):
 
@@ -135,4 +158,3 @@ class ProcessResults:
         dependencies_df = dependencies_df.drop(columns=['head_feats'])
 
         return sentences_df, dependencies_df
-

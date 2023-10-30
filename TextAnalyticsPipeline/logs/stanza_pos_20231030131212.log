@@ -1,0 +1,37 @@
+2023-10-30 13:12:13,341 [INFO] Querying 'test_random_text_5' table...
+2023-10-30 13:12:16,097 [INFO] 
+            SELECT DISTINCT
+            identificator, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.test_random_text_5`
+            
+2023-10-30 13:12:16,097 [INFO] Query successful
+
+2023-10-30 13:12:16,100 [WARNING] Can not find mwt: default from official model list. Ignoring it.
+2023-10-30 13:12:16,101 [INFO] Loading these models for language: en (English):
+========================
+| Processor | Package  |
+------------------------
+| tokenize  | combined |
+| pos       | combined |
+| lemma     | combined |
+========================
+
+2023-10-30 13:12:16,113 [INFO] Using device: cpu
+2023-10-30 13:12:16,114 [INFO] Loading: tokenize
+2023-10-30 13:12:16,118 [INFO] Loading: pos
+2023-10-30 13:12:16,335 [INFO] Loading: lemma
+2023-10-30 13:12:16,354 [INFO] Done loading processors!
+2023-10-30 13:12:16,554 [INFO] Processing documents for part-of-speech extraction...
+2023-10-30 13:12:16,554 [INFO] Processing document id: {id}
+2023-10-30 13:12:16,743 [INFO] Processing documents for part-of-speech extraction...
+2023-10-30 13:12:16,743 [INFO] Processing document id: {id}
+2023-10-30 13:12:16,956 [INFO] Processing documents for part-of-speech extraction...
+2023-10-30 13:12:16,956 [INFO] Processing document id: {id}
+2023-10-30 13:12:16,958 [INFO] Writing pos to csv...
+2023-10-30 13:12:16,962 [INFO] Pushing pos to BigQuery...
+2023-10-30 13:12:17,298 [INFO] Dataset dmrc-data.WordFlow_AnalyticsEngine already exists
+2023-10-30 13:12:17,298 [INFO] Pushing temp file to BigQuery dataset...
+2023-10-30 13:12:17,640 [INFO] Table exists
+2023-10-30 13:12:24,465 [INFO] Loaded records rows and 2 columns to dmrc-data.WordFlow_AnalyticsEngine.test_random_text_5_stanza_part_of_speech
+2023-10-30 13:12:24,465 [INFO] Results of pos successfully pushed to BigQuery!
+

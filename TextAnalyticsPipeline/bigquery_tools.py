@@ -17,7 +17,7 @@ class Schema:
 
     # Named Entity Recognition schema
     ner_schema = [
-        bigquery.SchemaField("identifier", "STRING", mode="REQUIRED", description="URL to the news article (LINK to dataset of origin)."),
+        bigquery.SchemaField("identifier", "STRING", mode="REQUIRED", description="Identifier for the record"),
         bigquery.SchemaField("text", "STRING", mode="NULLABLE", description="Named entity text"),
         bigquery.SchemaField("type", "STRING", mode="NULLABLE", description="Named entity type"),
         bigquery.SchemaField("start_char", "INTEGER", mode="NULLABLE", description="Location of start character of entity in input string."),
@@ -47,6 +47,58 @@ class Schema:
         bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text'),
     ]
 
+    # Column order for Part of Speech Tagging table
+    pos_column_order = [
+        'identifier',
+        'sentence_num',
+        'word_num',
+        'word_id',
+        'word',
+        'lemma',
+        'upos',
+        'xpos',
+        'start_char',
+        'end_char',
+        ]
+
+    # Dependency Parsing schema
+    depparse_schema = [
+        bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
+        bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
+        bigquery.SchemaField('word_num', 'INTEGER', description='Source word identifier'),
+        bigquery.SchemaField('word_id', 'STRING', description='Source word identifier'),
+        bigquery.SchemaField('word_text', 'STRING', description='Source word text'),
+        bigquery.SchemaField('word_lemma', 'STRING', description='Source word lemma'),
+        bigquery.SchemaField('word_start_char', 'INTEGER', description='Start character position in text'),
+        bigquery.SchemaField('word_end_char', 'INTEGER', description='End character position in text'),
+        bigquery.SchemaField('relation', 'STRING', description='Dependency relation'),
+        bigquery.SchemaField('head_num', 'STRING', description='Target word identifier'),
+        bigquery.SchemaField('head_id', 'STRING', description='Target word identifier'),
+        bigquery.SchemaField('head_text', 'STRING', description='Target word text'),
+        bigquery.SchemaField('head_lemma', 'STRING', description='Target word lemma'),
+        bigquery.SchemaField('head_start_char', 'INTEGER', description='Target word start character position'),
+        bigquery.SchemaField('head_end_char', 'INTEGER', description='Target word end character position')
+    ]
+
+    # Column order for Dependency Parsing table
+    depparse_column_order = [
+        'identifier',
+        'sentence_num',
+        'word_num', 
+        'word_id',
+        'word_text',
+        'word_lemma',
+        'word_start_char',
+        'word_end_char',
+        'relation',
+        'head_num',
+        'head_id',
+        'head_text',
+        'head_lemma',
+        'head_start_char',
+        'head_end_char'
+    ]
+
         # bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
         # bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
         # bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
@@ -61,98 +113,19 @@ class Schema:
         # bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
         # bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature')
 
-    # Column order for Part of Speech Tagging table
-    pos_column_order = [
-        'identifier',
-        'sentence_num',
-        'word_num',
-        'word_id',
-        'word',
-        'lemma',
-        'upos',
-        'xpos',
-        'start_char',
-        'end_char',
-        'features_Number',
-        'features_Mood',
-        'features_Person',
-        'features_Tense',
-        'features_VerbForm',
-        'features_Case',
-        'features_Gender',
-        'features_PronType',
-        'features_Degree',
-        'features_Definite',
-        'features_NumForm',
-        'features_NumType',
-        'features_Voice'
-        ]
-
-    # Dependency Parsing schema
-    dependencies_schema = [
-        bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
-        bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
-        bigquery.SchemaField('word_num', 'INTEGER', description='Source word identifier'),
-        bigquery.SchemaField('word_id', 'STRING', description='Source word identifier'),
-        bigquery.SchemaField('word_text', 'STRING', description='Source word text'),
-        bigquery.SchemaField('word_lemma', 'STRING', description='Source word lemma'),
-        bigquery.SchemaField('relation', 'STRING', description='Dependency relation'),
-        bigquery.SchemaField('head_id', 'STRING', description='Target word identifier'),
-        bigquery.SchemaField('head_text', 'STRING', description='Target word text'),
-        bigquery.SchemaField('head_lemma', 'STRING', description='Target word lemma'),
-        bigquery.SchemaField('head_upos', 'STRING', description='Target word Universal Part-of-Speech tag'),
-        bigquery.SchemaField('head_xpos', 'STRING', description='Target word language-specific Part-of-Speech tag'),
-        bigquery.SchemaField('head_head', 'INTEGER', description='Target word head identifier'),
-        bigquery.SchemaField('head_deprel', 'STRING', description='Target word dependency relation'),
-        bigquery.SchemaField('head_start_char', 'INTEGER', description='Target word start character position'),
-        bigquery.SchemaField('head_end_char', 'INTEGER', description='Target word end character position'),
-        bigquery.SchemaField('head_feats_Number', 'STRING', description='Target word Number feature'),
-        bigquery.SchemaField('head_feats_Mood', 'STRING', description='Target word Mood feature'),
-        bigquery.SchemaField('head_feats_Person', 'STRING', description='Target word Person feature'),
-        bigquery.SchemaField('head_feats_Tense', 'STRING', description='Target word Tense feature'),
-        bigquery.SchemaField('head_feats_VerbForm', 'STRING', description='Target word Verb form feature'),
-        bigquery.SchemaField('head_feats_Case', 'STRING', description='Target word Case feature'),
-        bigquery.SchemaField('head_feats_Gender', 'STRING', description='Target word Gender feature'),
-        bigquery.SchemaField('head_feats_PronType', 'STRING', description='Target word Pronoun type feature'),
-        bigquery.SchemaField('head_feats_Degree', 'STRING', description='Target word Degree feature'),
-        bigquery.SchemaField('head_feats_Definite', 'STRING', description='Target word Definite feature'),
-        bigquery.SchemaField('head_feats_NumForm', 'STRING', description='Target word Number form feature'),
-        bigquery.SchemaField('head_feats_NumType', 'STRING', description='Target word Number type feature'),
-        bigquery.SchemaField('head_feats_Voice', 'STRING', description='Target word Voice feature')
-    ]
-
-    # Column order for Dependency Parsing table
-    dependencies_column_order = [
-        'identifier',
-        'sentence_num',
-        'word_num',
-        'word_id',
-        'word_text',
-        'word_lemma',
-        'relation',
-        'head_id',
-        'head_text',
-        'head_lemma',
-        'head_upos',
-        'head_xpos',
-        'head_head',
-        'head_deprel',
-        'head_start_char',
-        'head_end_char',
-        'head_feats_Number',
-        'head_feats_Mood',
-        'head_feats_Person',
-        'head_feats_Tense',
-        'head_feats_VerbForm',
-        'head_feats_Case',
-        'head_feats_Gender',
-        'head_feats_PronType',
-        'head_feats_Degree',
-        'head_feats_Definite',
-        'head_feats_NumForm',
-        'head_feats_NumType',
-        'head_feats_Voice'
-    ]
+        # 'features_Number',
+        # 'features_Mood',
+        # 'features_Person',
+        # 'features_Tense',
+        # 'features_VerbForm',
+        # 'features_Case',
+        # 'features_Gender',
+        # 'features_PronType',
+        # 'features_Degree',
+        # 'features_Definite',
+        # 'features_NumForm',
+        # 'features_NumType',
+        # 'features_Voice'
 
 
 class PushTables:
@@ -197,7 +170,7 @@ class PushTables:
                         suff = 'named_entities'
                     elif table_schema == Schema.pos_schema:
                         suff = 'part_of_speech'
-                    elif table_schema == Schema.dependencies_schema:
+                    elif table_schema == Schema.depparse_schema:
                         suff = 'depparse'
                     else:
                         suff = 'sentiment'

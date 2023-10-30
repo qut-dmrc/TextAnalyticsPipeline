@@ -29,11 +29,10 @@ from .data_processor import ProcessResults
 from .set_up_logging import set_up_logging
 from .validate_params import ValidateParams
 
-# stanza.download('en') # download English model
-
 # Google BigQuery Config
 # ----------------------------------------------------------------------------------------------------------------------
 def find_optimal_chunk_size(a, min_chunk_size=5000, max_chunk_size=10000):
+    
     # Start with the maximum allowed chunk size
     chunk_size = max_chunk_size
 
@@ -52,8 +51,20 @@ def run_text_pipeline():
     Runs the text analysis pipeline; the starting point for the pipeline.
     '''
 
+    # Get the processor class and processor name to be used (see config.py)
+    pc = ProcessorClass()
+    processor_class, processor_name = pc.get_processor_class()
+
+    # Get the language to be used (see config.py)
+    lg = Language()
+    lang = lg.get_language()
+
+    # Get the library to be used (see config.py)
+    lb = Library()
+    library = lb.get_library()
+
     # Set up logging (see set_up_logging.py)
-    set_up_logging('TextAnalyticsPipeline/logs')
+    set_up_logging('TextAnalyticsPipeline/logs', library, processor_name)
 
     # Initialize config classes
     gbq = BigQuery()
@@ -139,18 +150,6 @@ def run_text_pipeline():
     identifiers = df[id_column].tolist()
     documents = df[text_column].tolist()
 
-    # Get the processor class to be used based on the config
-    pc = ProcessorClass()
-    processor_class, processor_name = pc.get_processor_class()
-
-    # Get the language
-    lg = Language()
-    lang = lg.get_language()
-
-    # Get the library to be used based on the config
-    lb = Library()
-    library = lb.get_library()
-
     # Initialize empty list to store entities dataframes
     result_dfs = []
 
@@ -183,6 +182,7 @@ def run_text_pipeline():
 
                     # Process document entities
                     logging.info('Processing documents for entity extraction...')
+                    logging.info('Processing document id: {id}')
 
                     # Test if there is entities, and, if so, process them
                     if len(entities) > 0:
@@ -227,6 +227,7 @@ def run_text_pipeline():
 
                     # Process document part-of-speech tagging
                     logging.info('Processing documents for part-of-speech extraction...')
+                    logging.info('Processing document id: {id}')
 
                     # Initialize result processor
                     result_processor = ProcessResults()
@@ -247,21 +248,73 @@ def run_text_pipeline():
 
         elif processor_name == 'depparse':
 
+                # Set table schema 
+                table_schema = Schema.depparse_schema
+
                 count = 0
                 for id, document in zip(identifiers, documents):
-
+                    
                     # Count keeps track of the number of documents processed
                     count = count + 1
 
                     # Process the document with the Stanza model
                     doc = nlp(document)
 
-                    sentences = doc.sentences
-                    table_schema = [Schema.pos_schema, Schema.dependencies_schema]
-                    # Process document sentences
-                    logging.info('Processing sentences for part-of-speech extraction...')
-                    sentences_df, dependencies_df = result_processor.process_sentences(id, sentences, count)
-                    result_dfs.append([sentences_df, dependencies_df])
+                    # Process depparse
+                    logging.info('Processing documents for dependency parsing extraction...')
+                    logging.info('Processing document id: {id}')
+
+                    # Initialize result processor
+                    result_processor = ProcessResults()
+
+                    dependency_info = []
+
+                    for sentence in doc.sentences:
+                        for word in sentence.words:
+                            row = {
+                                'sentence_num': sentence.index + 1,
+                                'word_num': word.id,
+                                'word_id': f'{id}_{sentence.index + 1}_{word.id}',
+                                'word_text': word.text,
+                                'word_lemma': word.lemma,
+                                'word_start_char': word.start_char,
+                                'word_end_char': word.end_char
+                            }
+
+                            if word.deprel == 'root':
+                                relation = word.deprel.upper()
+                                row.update({
+                                    'relation': relation,
+                                    'head_num': word.id,
+                                    'head_id': f'{id}_{sentence.index + 1}_{word.id}',
+                                    'head_text': word.text,
+                                    'head_lemma': word.lemma,
+                                    'head_start_char': word.start_char,
+                                    'head_end_char': word.end_char
+                                })
+                            else:
+                                head_word = sentence.words[int(word.head) - 1]
+                                head_info = {
+                                    'relation': word.deprel,
+                                    'head_num': word.head,
+                                    'head_id': f'{id}_{sentence.index + 1}_{word.head}',
+                                    'head_text': head_word.text,
+                                    'head_lemma': head_word.lemma,
+                                    'head_start_char': head_word.start_char,
+                                    'head_end_char': head_word.end_char
+                                }
+                                row.update(head_info)
+
+                            dependency_info.append(row)
+
+                    # Transform in df
+                    df = pd.DataFrame(dependency_info)
+
+                    # Run processor
+                    depparse_df = result_processor.process_depparse(id, df)
+
+                    # Append results
+                    result_dfs.append([depparse_df])
 
         else:
             result_dfs = None
@@ -270,6 +323,7 @@ def run_text_pipeline():
         
         # Initialize the Spacy model 
         nlp = spacy.load(f'{lang}_core_web_lg')
+        #TODO deal with sizes of language models 
         
         if processor_name == 'ner':
 
@@ -295,6 +349,7 @@ def run_text_pipeline():
 
                     # Process document entities
                     logging.info('Processing documents for entity extraction...')
+                    logging.info('Processing document id: {id}')
 
                     # Test if there is entities, and, if so, process them
                     if len(entities) > 0:
@@ -342,6 +397,7 @@ def run_text_pipeline():
 
                 # Process document part-of-speech tagging
                 logging.info('Processing documents for part-of-speech extraction...')
+                logging.info('Processing document id: {id}')
 
                 # Initialize result processor
                 result_processor = ProcessResults()
@@ -349,19 +405,26 @@ def run_text_pipeline():
                 # Create empty list to hold tokens dictionaries
                 tokens_list = []
 
-                # Get entities information
-                for token in doc:
-                    tokens_list.append({
-                        'sentence_num': 9999,
-                        'word_num': token.i,
-                        'word_id': f'{id}_{token.sent}_{token.i}',
-                        'word': token.text,
-                        'lemma': token.lemma_,
-                        'upos': token.pos_,
-                        'xpos': '',
-                        'start_char': 0,
-                        'end_char': 0
-                    })
+                # Initialize sentence number
+                sentence_num = 1
+
+                # Get tokens information
+                for sentence in doc.sents:
+                    word_num = 1  # Initialize word_num for each sentence
+                    for token in sentence:
+                        tokens_list.append({
+                            'sentence_num': sentence_num,
+                            'word_num': word_num,
+                            'word_id': f'{id}_{sentence_num}_{word_num}',
+                            'word': token.text,
+                            'lemma': token.lemma_,
+                            'upos': token.pos_,
+                            'xpos': token.tag_,
+                            'start_char': token.idx,
+                            'end_char': token.idx + len(token)
+                        })
+                        word_num += 1  # Increment word_num for each word in the sentence
+                    sentence_num += 1  # Increment sentence_num for each sentence in the document
 
                 # Convert tokens_list = to dataframe
                 df = pd.DataFrame(tokens_list)
@@ -371,6 +434,69 @@ def run_text_pipeline():
 
                 # Append results
                 result_dfs.append([pos_df])
+
+        elif processor_name == 'depparse':
+
+            # Set table schema 
+            table_schema = Schema.depparse_schema
+
+            count = 0
+            for id, document in zip(identifiers, documents):
+                
+                # Count keeps track of the number of documents processed
+                count = count + 1
+
+                # Process the document with the Spacy model
+                doc = nlp(document)
+
+                # Process depparse
+                logging.info('Processing documents for dependency parsing extraction...')
+                logging.info('Processing document id: {id}')
+
+                # Initialize result processor
+                result_processor = ProcessResults()
+
+                # Initialize sentence number
+                sentence_num = 1
+
+                # Get information
+                dependency_info = []
+                for sentence in doc.sents:
+
+                    word_counter = 1 
+                    word_positions = {}  # Dictionary to store word positions within each sentence
+                    for token in sentence:
+                        word_positions[token.i] = word_counter
+                        word_counter += 1
+
+                    for token in sentence:
+                        head_token = token.head
+                        dependency_info.append({
+                            'sentence_num': sentence_num,
+                            'word_num': word_positions[token.i],
+                            'word_id': f'{id}_{sentence_num}_{word_positions[token.i]}',
+                            'word_text': token.text,
+                            'word_lemma': token.lemma_,
+                            'start_char': token.idx,
+                            'end_char': token.idx + len(token),
+                            'relation': token.dep_,
+                            'head_num': word_positions[head_token.i] if head_token.i in word_positions else 0,
+                            'head_id': f'{id}_{sentence_num}_{word_positions[head_token.i] if head_token.i in word_positions else 0}',
+                            'head_text': head_token.text,
+                            'head_lemma': head_token.lemma_,
+                            'head_start_char': head_token.idx,
+                            'head_end_char': head_token.idx + len(head_token)
+                        })
+                    sentence_num += 1  # Increment sentence_num for each sentence in the document
+
+                # Transform in df
+                df = pd.DataFrame(dependency_info)
+
+                # Run processor
+                depparse_df = result_processor.process_depparse(id, df)
+
+                # Append results
+                result_dfs.append([depparse_df])
 
     # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
     chunk = find_optimal_chunk_size(n_docs)
@@ -382,15 +508,15 @@ def run_text_pipeline():
         dfs_concat = [inner_list[0] for inner_list in result_dfs]
         results_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
 
-        # Write entities_df to csv
+        # Write results_dfs_concat to csv
         logging.info(f'Writing {processor_name} to csv...')
         results_dfs_concat.to_csv(f'TextAnalyticsPipeline/temp/temp_{processor_name}_{library}.csv', encoding='utf-8', index=False)
 
-        # Push entities to BigQuery
+        # Push results_dfs_concat to BigQuery
         push_tables = PushTables()
         logging.info(f'Pushing {processor_name} to BigQuery...')
         push_tables.push_to_gbq(database_import, bq, project, dataset, table, table_schema, library, proc=f'{processor_name}')
-        logging.info(f'{processor_name} successfully pushed to BigQuery!\n')
+        logging.info(f'Results of {processor_name} successfully pushed to BigQuery!\n')
 
         # empty result_dfs list
         result_dfs = []

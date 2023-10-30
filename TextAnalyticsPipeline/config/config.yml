@@ -2,9 +2,9 @@
 servicekey_path: '' # Path to Google BigQuery Credentials
 project_name: 'dmrc-data'
 dataset_name: 'WordFlow_AnalyticsEngine'
-tablename: 'facebook_posts_australia'
+tablename: 'test_random_text_8'
 
-id_column: 'platformId'
+id_column: 'identificator'
 text_column: 'message'
 
 from_database: True
@@ -13,10 +13,10 @@ from_csv: False
 language: 'en'
 
 named_entity_recognition: False
-part_of_speech: True
-dependency_parsing: False
+part_of_speech: False
+dependency_parsing: True
 sentiment: False
 
-stanza: True
-spacy: False
+stanza: False
+spacy: True
 nltk: False
