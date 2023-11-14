@@ -37,6 +37,7 @@ def find_optimal_chunk_size(a, min_chunk_size=5000, max_chunk_size=10000):
             return chunk_size
         chunk_size -= 1
 
+    print(f'Chunk size = {chunk_size}')
     # If no suitable chunk size is found, set it to min_chunk_size
     return min_chunk_size
 
@@ -88,6 +89,7 @@ def run_text_pipeline():
     # Initialise BigQuery client
     client = bigquery.Client()
     bq = Client(project=project)
+
 
     # If database_import is True, query BigQuery table. If False, read csv into dataframe
     if database_import == True:
