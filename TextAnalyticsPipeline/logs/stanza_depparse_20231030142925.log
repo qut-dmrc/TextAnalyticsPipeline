@@ -1,0 +1,36 @@
+2023-10-30 14:29:26,924 [INFO] Querying 'test_random_text_6' table...
+2023-10-30 14:29:29,774 [INFO] 
+            SELECT DISTINCT
+            identificator, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.test_random_text_6`
+            
+2023-10-30 14:29:29,774 [INFO] Query successful
+
+2023-10-30 14:29:29,774 [WARNING] Can not find mwt: default from official model list. Ignoring it.
+2023-10-30 14:29:29,774 [INFO] Loading these models for language: en (English):
+========================
+| Processor | Package  |
+------------------------
+| tokenize  | combined |
+| pos       | combined |
+| lemma     | combined |
+| depparse  | combined |
+========================
+
+2023-10-30 14:29:29,774 [INFO] Using device: cpu
+2023-10-30 14:29:29,774 [INFO] Loading: tokenize
+2023-10-30 14:29:29,774 [INFO] Loading: pos
+2023-10-30 14:29:30,010 [INFO] Loading: lemma
+2023-10-30 14:29:30,031 [INFO] Loading: depparse
+2023-10-30 14:29:30,285 [INFO] Done loading processors!
+2023-10-30 14:29:30,679 [INFO] Processing documents for dependency parsing extraction...
+2023-10-30 14:29:30,679 [INFO] Processing document id: {id}
+2023-10-30 14:29:31,057 [INFO] Processing documents for dependency parsing extraction...
+2023-10-30 14:29:31,057 [INFO] Processing document id: {id}
+2023-10-30 14:29:31,500 [INFO] Processing documents for dependency parsing extraction...
+2023-10-30 14:29:31,500 [INFO] Processing document id: {id}
+2023-10-30 14:29:31,502 [INFO] Writing depparse to csv...
+2023-10-30 14:29:31,502 [INFO] Pushing depparse to BigQuery...
+2023-10-30 14:29:31,808 [INFO] Dataset dmrc-data.WordFlow_AnalyticsEngine already exists
+2023-10-30 14:29:31,818 [INFO] Pushing temp file to BigQuery dataset...
+2023-10-30 14:29:32,096 [INFO] Table exists

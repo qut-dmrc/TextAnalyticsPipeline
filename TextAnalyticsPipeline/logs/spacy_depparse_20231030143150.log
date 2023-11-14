@@ -1,0 +1,10 @@
+2023-10-30 14:31:51,455 [INFO] Querying 'test_random_text_6' table...
+2023-10-30 14:31:54,240 [INFO] 
+            SELECT DISTINCT
+            identificator, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.test_random_text_6`
+            
+2023-10-30 14:31:54,240 [INFO] Query successful
+
+2023-10-30 14:31:55,434 [INFO] Processing documents for dependency parsing extraction...
+2023-10-30 14:31:55,434 [INFO] Processing document id: {id}

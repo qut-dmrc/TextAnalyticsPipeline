@@ -14,7 +14,6 @@ except yaml.YAMLError:
     print("\nDetected an issue with your config.")
 
 
-
 class BigQuery:
     try:
         gbq_creds = os.environ['gbq_servicekey']
@@ -39,30 +38,65 @@ class ProcessorClass:
 
         ner = config['named_entity_recognition']
         pos = config['part_of_speech']
+        depparse = config['dependency_parsing']
         sentiment = config['sentiment']
-        lang = config['language']
 
-        # If any of ner, pos, or sentiment are True, then set processor_class to whichever is True
+        # If any of ner, pos, depparse, or sentiment are True, then set processor_class to whichever is True
         if ner == True:
             processor_class = 'ner'
+            processor_name = 'ner'
         elif pos == True:
+            processor_class = 'lemma, pos'
+            processor_name = 'pos'
+        elif depparse == True:
             processor_class = 'lemma, pos, depparse'
+            processor_name = 'depparse'
         elif sentiment == True:
             processor_class = 'sentiment'
+            processor_name = 'sentiment'
         else:
             processor_class = None
+            processor_name = None
 
         # If more than once of processor_class is True, then exit
-        if [ner, pos, sentiment].count(True) > 1:
+        if [ner, pos, depparse, sentiment].count(True) > 1:
             print("\nMore than one processor class is True. Please set only one to True.")
             exit()
         else:
             pass
 
-        if lang == 'en':
-            mwt = ''
+        return processor_class, processor_name
+    
+class Language:
+
+    def get_language(self):
+
+        lang = config['language']
+        return lang
+
+class Library:
+
+    def get_library(self):
+
+        l_stanza = config['stanza']
+        l_spacy = config['spacy']
+        l_nltk = config['nltk']
+    
+        # If any of ner, pos, or sentiment are True, then set processor_class to whichever is True
+        if l_stanza == True:
+            library = 'stanza'
+        elif l_spacy == True:
+            library = 'spacy'
+        elif l_nltk == True:
+            library = 'nltk'
         else:
-            mwt = 'mwt,'
+            library = None
 
-        return processor_class, mwt, lang
+        # If more than once of processor_class is True, then exit
+        if [l_stanza, l_spacy, l_nltk].count(True) > 1:
+            print("\nMore than one library is True. Please set only one to True.")
+            exit()
+        else:
+            pass
 
+        return library

@@ -5,7 +5,7 @@ import pandas as pd
 
 class ProcessResults:
 
-    def process_entities(self, id, entities):
+    def process_ner(self, id, df):
         '''
         For Named Entity Recognition: Processes the results into a table with the following columns:
             - identifier
@@ -14,21 +14,62 @@ class ProcessResults:
             - start_char
             - end_char
         '''
-        # Convert entities to dataframe and extract dictionary values
-        df = pd.DataFrame(entities)
-
-        df[0] = df[0].apply(lambda x: x.to_dict())
-
-        # Extract values from dictionary
-        df = pd.json_normalize(df[0])
-
+        
         # Concatenate id column values and entities_df as new dataframe
         id_list = [id] * len(df)
         entities_df = pd.concat([pd.DataFrame(id_list), df], axis=1)
-        entities_df.columns = entities_df.columns = ['identifier', 'text', 'type', 'start_char', 'end_char']
+        entities_df.columns = ['identifier', 'text', 'type', 'start_char', 'end_char']
 
         return entities_df
+    
+    def process_pos(self, id, df):
+        '''
+        For Part of Speech: Processes the results into a table with the following columns:
+            'identifier',
+            'sentence_num',
+            'word_num',
+            'word_id',
+            'word',
+            'lemma',
+            'upos',
+            'xpos',
+            'start_char',
+            'end_char',
+        '''
+        # Concatenate id column values and entities_df as new dataframe
+        id_list = [id] * len(df)
+        pos_df = pd.concat([pd.DataFrame(id_list), df], axis=1)
+        pos_df.columns = ['identifier', 'sentence_num', 'word_num', 'word_id', 'word', 'lemma', 'upos', 'xpos', 'start_char', 'end_char']
 
+        return pos_df
+
+    def process_depparse(self, id, df):
+        '''
+        For Dependency Parsing: Processes the results into a table with the following columns:
+            'identifier',
+            'sentence_num',
+            'word_num', 
+            'word_id',
+            'word_text',
+            'word_lemma',
+            'word_start_char',
+            'word_end_char',
+            'relation',
+            'head_num',
+            'head_id',
+            'head_text',
+            'head_lemma',
+            'head_start_char',
+            'head_end_char'
+        '''
+
+        # Concatenate id column values and entities_df as new dataframe
+        id_list = [id] * len(df)
+        depparse_df = pd.concat([pd.DataFrame(id_list), df], axis=1)
+        depparse_df.columns = ['identifier', 'sentence_num', 'word_num', 'word_id', 'word_text', 'word_lemma', 'word_start_char', 'word_end_char', 'relation', 'head_num', 'head_id', 'head_text', 'head_lemma', 'head_start_char', 'head_end_char']
+
+        return depparse_df
+    
     def process_sentences(self, id, sentences, count):
 
         '''
@@ -116,7 +157,4 @@ class ProcessResults:
         dependencies_df['word_id'] = dependencies_df['identifier'].astype(str) + '_' + dependencies_df['sentence_num'].astype(str) + '_' + dependencies_df['word_num'].astype(str)
         dependencies_df = dependencies_df.drop(columns=['head_feats'])
 
-
-
         return sentences_df, dependencies_df
-
