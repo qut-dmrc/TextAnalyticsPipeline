@@ -7,9 +7,9 @@ from spacy import displacy
 
 # One document per page
 nlp = spacy.load("en_core_web_sm")
-doc = nlp("This is a sentence.")
-displacy.serve(doc, style="dep", options={'compact': True})
-print('http://localhost:5000')
+doc = nlp("In case you have n't already heard the news, Pauline is coming to WA!")
+displacy.serve(doc, style="dep", auto_select_port=True, options={'compact': True})
+
 
 
 # Multiple documents in one page
