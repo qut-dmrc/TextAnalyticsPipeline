@@ -1,0 +1,25 @@
+2023-12-18 12:17:28,765 [INFO] Querying 'test_random_text_8' table...
+2023-12-18 12:17:32,933 [INFO] 
+            SELECT DISTINCT
+            identificator, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.test_random_text_8`
+            
+2023-12-18 12:17:32,935 [INFO] Query successful
+
+2023-12-18 12:17:32,941 [WARNING] Can not find mwt: default from official model list. Ignoring it.
+2023-12-18 12:17:32,943 [INFO] Loading these models for language: en (English):
+========================
+| Processor | Package  |
+------------------------
+| tokenize  | combined |
+| pos       | combined |
+| lemma     | combined |
+========================
+
+2023-12-18 12:17:32,958 [INFO] Using device: cpu
+2023-12-18 12:17:32,959 [INFO] Loading: tokenize
+2023-12-18 12:17:32,965 [INFO] Loading: pos
+2023-12-18 12:17:33,225 [INFO] Loading: lemma
+2023-12-18 12:17:33,254 [INFO] Done loading processors!
+2023-12-18 12:17:33,487 [INFO] Processing documents for morphology extraction...
+2023-12-18 12:17:33,487 [INFO] Processing document id: {id}

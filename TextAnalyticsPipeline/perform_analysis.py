@@ -316,6 +316,74 @@ def run_text_pipeline():
                     # Append results
                     result_dfs.append([depparse_df])
 
+        elif processor_name == 'morphology':
+
+                # Set table schema 
+                table_schema = Schema.morphology_schema
+
+                count = 0
+                for id, document in zip(identifiers, documents):
+                    
+                    # Count keeps track of the number of documents processed
+                    count = count + 1
+
+                    # Process the document with the Stanza model
+                    doc = nlp(document)
+
+                    # Process depparse
+                    logging.info('Processing documents for morphology extraction...')
+                    logging.info('Processing document id: {id}')
+
+                    # Initialize result processor
+                    result_processor = ProcessResults()
+
+                    morphology_info = []
+
+                    for sent_num, sentence in enumerate(doc.sentences):
+                        for word_num, word in enumerate(sentence.words, start=1):
+
+                            # Splitting concatenated features into a dictionary
+                            feats_dict = {}
+                            if word.feats is not None:
+                                feats_list = word.feats.split('|')  # Splitting by '|'
+                                for feat in feats_list:
+                                    key, value = feat.split('=')
+                                    feats_dict[key] = value
+
+                            # Extracting word attributes
+                            morphology_row = {
+                                'sentence_num': sentence.index + 1,
+                                'word_num': word.id,
+                                'word_id': f'{id}_{sentence.index + 1}_{word.id}',
+                                'word': word.text,
+                                'lemma': word.lemma,
+                                'features_Number': feats_dict.get('Number') if feats_dict else None,
+                                'features_Mood': feats_dict.get('Mood') if feats_dict else None,
+                                'features_Person': feats_dict.get('Person') if feats_dict else None,
+                                'features_Tense': feats_dict.get('Tense') if feats_dict else None,
+                                'features_VerbForm': feats_dict.get('VerbForm') if feats_dict else None,
+                                'features_Case': feats_dict.get('Case') if feats_dict else None,
+                                'features_Gender': feats_dict.get('Gender') if feats_dict else None,
+                                'features_PronType': feats_dict.get('PronType') if feats_dict else None,
+                                'features_Degree': feats_dict.get('Degree') if feats_dict else None,
+                                'features_Definite': feats_dict.get('Definite') if feats_dict else None,
+                                'features_NumForm': feats_dict.get('NumForm') if feats_dict else None,
+                                'features_NumType': feats_dict.get('NumType') if feats_dict else None,
+                                'features_Voice': feats_dict.get('Voice') if feats_dict else None,
+                                'start_char': word.start_char,
+                                'end_char': word.end_char
+                            }
+                            morphology_info.append(morphology_row)
+                            
+                    # Transform in df
+                    df = pd.DataFrame(morphology_info)
+
+                    # Run processor
+                    morphology_df = result_processor.process_morphology(id, df)
+
+                    # Append results
+                    result_dfs.append([morphology_df])
+
         else:
             result_dfs = None
 
@@ -497,6 +565,80 @@ def run_text_pipeline():
 
                 # Append results
                 result_dfs.append([depparse_df])
+
+        elif processor_name == 'morphology':
+
+            # Set table schema 
+            table_schema = Schema.morphology_schema
+
+            count = 0
+            for id, document in zip(identifiers, documents):
+                
+                # Count keeps track of the number of documents processed
+                count = count + 1
+
+                # Process the document with the Spacy model
+                doc = nlp(document)
+
+                # Process depparse
+                logging.info('Processing documents for morphology extraction...')
+                logging.info('Processing document id: {id}')
+
+                # Initialize result processor
+                result_processor = ProcessResults()
+                
+                # Initialize sentence number
+                sentence_num = 1
+
+                # Run extraction
+                morphology_info = []
+                for sentence in doc.sents:
+                    word_num = 1  # Initialize word_num for each sentence
+                    for token in sentence:
+                        # Extracting token attributes
+                        morphology_row = {
+                            'sentence_num': sentence_num,
+                            'word_num': word_num,
+                            'word_id': f'{id}_{sentence_num}_{word_num}',
+                            'word': token.text,
+                            'lemma': token.lemma_,
+                            'features_Number': token.morph.get('Number'),
+                            'features_Mood': token.morph.get('Mood'),
+                            'features_Person': token.morph.get('Person'),
+                            'features_Tense': token.morph.get('Tense'),
+                            'features_VerbForm': token.morph.get('VerbForm'),
+                            'features_Case': token.morph.get('Case'),
+                            'features_Gender': token.morph.get('Gender'),
+                            'features_PronType': token.morph.get('PronType'),
+                            'features_Degree': token.morph.get('Degree'),
+                            'features_Definite': token.morph.get('Definite'),
+                            'features_NumForm': token.morph.get('NumForm'),
+                            'features_NumType': token.morph.get('NumType'),
+                            'features_Voice': token.morph.get('Voice'),
+                            'start_char': token.idx,
+                            'end_char': token.idx + len(token),
+                        }
+                        word_num += 1  # Increment word_num for each word in the sentence
+
+                        for key, value in morphology_row.items():
+                            
+                            if isinstance(value, list):
+                                if len(value) > 0:
+                                    morphology_row[key] = value[0]
+                                else:
+                                    morphology_row[key] = ''
+
+                        morphology_info.append(morphology_row)
+                    sentence_num += 1  # Increment sentence_num for each sentence in the document
+
+                # Transform in df
+                df = pd.DataFrame(morphology_info)
+
+                # Run processor
+                morphology_df = result_processor.process_morphology(id, df)
+
+                # Append results
+                result_dfs.append([morphology_df])
 
     # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
     chunk = find_optimal_chunk_size(n_docs)

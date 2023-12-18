@@ -99,34 +99,54 @@ class Schema:
         'head_end_char'
     ]
 
-        # bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
-        # bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
-        # bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
-        # bigquery.SchemaField('features_Tense', 'STRING', description='Tense feature'),
-        # bigquery.SchemaField('features_VerbForm', 'STRING', description='Verb form feature'),
-        # bigquery.SchemaField('features_Case', 'STRING', description='Case feature'),
-        # bigquery.SchemaField('features_Gender', 'STRING', description='Gender feature'),
-        # bigquery.SchemaField('features_PronType', 'STRING', description='Pronoun type feature'),
-        # bigquery.SchemaField('features_Degree', 'STRING', description='Degree feature'),
-        # bigquery.SchemaField('features_Definite', 'STRING', description='Definite feature'),
-        # bigquery.SchemaField('features_NumForm', 'STRING', description='Number form feature'),
-        # bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
-        # bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature')
+    # Morphology schema
+    morphology_schema = [
+        bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
+        bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
+        bigquery.SchemaField('word_num', 'INTEGER', description='Word number in the sentence'),
+        bigquery.SchemaField('word_id', 'STRING', description='Word identifier'),
+        bigquery.SchemaField('word', 'STRING', description='Word text'),
+        bigquery.SchemaField('lemma', 'STRING', description='Lemma of the word'),
+        bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
+        bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
+        bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
+        bigquery.SchemaField('features_Tense', 'STRING', description='Tense feature'),
+        bigquery.SchemaField('features_VerbForm', 'STRING', description='Verb form feature'),
+        bigquery.SchemaField('features_Case', 'STRING', description='Case feature'),
+        bigquery.SchemaField('features_Gender', 'STRING', description='Gender feature'),
+        bigquery.SchemaField('features_PronType', 'STRING', description='Pronoun type feature'),
+        bigquery.SchemaField('features_Degree', 'STRING', description='Degree feature'),
+        bigquery.SchemaField('features_Definite', 'STRING', description='Definite feature'),
+        bigquery.SchemaField('features_NumForm', 'STRING', description='Number form feature'),
+        bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
+        bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature'),
+        bigquery.SchemaField('start_char', 'INTEGER', description='Start character position in text'),
+        bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text')
+    ]
 
-        # 'features_Number',
-        # 'features_Mood',
-        # 'features_Person',
-        # 'features_Tense',
-        # 'features_VerbForm',
-        # 'features_Case',
-        # 'features_Gender',
-        # 'features_PronType',
-        # 'features_Degree',
-        # 'features_Definite',
-        # 'features_NumForm',
-        # 'features_NumType',
-        # 'features_Voice'
-
+    morphology_column_order = [
+        'identifier',
+        'sentence_num',
+        'word_num', 
+        'word_id',
+        'word',
+        'lemma',
+        'features_Number',
+        'features_Mood',
+        'features_Person',
+        'features_Tense',
+        'features_VerbForm',
+        'features_Case',
+        'features_Gender',
+        'features_PronType',
+        'features_Degree',
+        'features_Definite',
+        'features_NumForm',
+        'features_NumType',
+        'features_Voice',
+        'start_char',
+        'end_char'
+    ]
 
 class PushTables:
 
@@ -172,6 +192,8 @@ class PushTables:
                         suff = 'part_of_speech'
                     elif table_schema == Schema.depparse_schema:
                         suff = 'depparse'
+                    elif table_schema == Schema.morphology_schema:
+                        suff = 'morphology'
                     else:
                         suff = 'sentiment'
                 else:

@@ -1,0 +1,10 @@
+2023-12-18 15:36:20,076 [INFO] Querying 'test_random_text_8' table...
+2023-12-18 15:36:22,758 [INFO] 
+            SELECT DISTINCT
+            identificator, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.test_random_text_8`
+            
+2023-12-18 15:36:22,759 [INFO] Query successful
+
+2023-12-18 15:36:25,073 [INFO] Processing documents for morphology extraction...
+2023-12-18 15:36:25,074 [INFO] Processing document id: {id}
