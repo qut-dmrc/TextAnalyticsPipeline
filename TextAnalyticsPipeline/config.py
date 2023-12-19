@@ -1,15 +1,21 @@
-import os
+import os 
 import yaml
 import glob
 
+# Get the current working directory
 wd = os.getcwd()
 
+# Attempt to open and load the YAML configuration file
 try:
     with open(f'{wd}/TextAnalyticsPipeline/config/config.yml', encoding='utf-8') as f:
         config = yaml.load(f, Loader=yaml.FullLoader)
+
+# Handle FileNotFoundError if the specified config file is not found
 except FileNotFoundError:
     print("\nCannot find config file!")
     exit()
+
+# Handle yaml.YAMLError if there's an issue with the YAML format in the config file
 except yaml.YAMLError:
     print("\nDetected an issue with your config.")
 
@@ -40,6 +46,7 @@ class ProcessorClass:
         pos = config['part_of_speech']
         depparse = config['dependency_parsing']
         sentiment = config['sentiment']
+        morphology = config['morphology']
 
         # If any of ner, pos, depparse, or sentiment are True, then set processor_class to whichever is True
         if ner == True:
@@ -54,6 +61,9 @@ class ProcessorClass:
         elif sentiment == True:
             processor_class = 'sentiment'
             processor_name = 'sentiment'
+        elif morphology == True:
+            processor_class = 'lemma, pos'
+            processor_name = 'morphology'
         else:
             processor_class = None
             processor_name = None

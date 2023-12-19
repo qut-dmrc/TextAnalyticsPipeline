@@ -1,0 +1,37 @@
+2023-12-18 12:22:02,195 [INFO] Querying 'test_random_text_8' table...
+2023-12-18 12:22:05,764 [INFO] 
+            SELECT DISTINCT
+            identificator, message
+            FROM `dmrc-data.WordFlow_AnalyticsEngine.test_random_text_8`
+            
+2023-12-18 12:22:05,765 [INFO] Query successful
+
+2023-12-18 12:22:05,769 [WARNING] Can not find mwt: default from official model list. Ignoring it.
+2023-12-18 12:22:05,771 [INFO] Loading these models for language: en (English):
+========================
+| Processor | Package  |
+------------------------
+| tokenize  | combined |
+| pos       | combined |
+| lemma     | combined |
+========================
+
+2023-12-18 12:22:05,787 [INFO] Using device: cpu
+2023-12-18 12:22:05,788 [INFO] Loading: tokenize
+2023-12-18 12:22:05,794 [INFO] Loading: pos
+2023-12-18 12:22:06,032 [INFO] Loading: lemma
+2023-12-18 12:22:06,057 [INFO] Done loading processors!
+2023-12-18 12:22:06,262 [INFO] Processing documents for morphology extraction...
+2023-12-18 12:22:06,263 [INFO] Processing document id: {id}
+2023-12-18 12:22:06,460 [INFO] Processing documents for morphology extraction...
+2023-12-18 12:22:06,461 [INFO] Processing document id: {id}
+2023-12-18 12:22:06,662 [INFO] Processing documents for morphology extraction...
+2023-12-18 12:22:06,663 [INFO] Processing document id: {id}
+2023-12-18 12:22:06,666 [INFO] Writing morphology to csv...
+2023-12-18 12:22:06,672 [INFO] Pushing morphology to BigQuery...
+2023-12-18 12:22:07,022 [INFO] Dataset dmrc-data.WordFlow_AnalyticsEngine already exists
+2023-12-18 12:22:07,023 [INFO] Pushing temp file to BigQuery dataset...
+2023-12-18 12:22:07,354 [INFO] Table exists
+2023-12-18 12:22:14,765 [INFO] Loaded records rows and 2 columns to dmrc-data.WordFlow_AnalyticsEngine.test_random_text_8_stanza_morphology
+2023-12-18 12:22:14,767 [INFO] Results of morphology successfully pushed to BigQuery!
+

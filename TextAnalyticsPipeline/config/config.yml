@@ -14,9 +14,10 @@ language: 'en'
 
 named_entity_recognition: False
 part_of_speech: False
-dependency_parsing: True
+dependency_parsing: False
 sentiment: False
+morphology: True
 
-stanza: False
-spacy: True
+stanza: True
+spacy: False
 nltk: False
