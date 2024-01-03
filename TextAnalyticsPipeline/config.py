@@ -30,13 +30,11 @@ class BigQuery:
     dataset_name = config['dataset_name']
     tablename = config['tablename']
 
-
 class InputConf:
     from_database = config['from_database']
     from_csv = config['from_csv']
     id_column = config['id_column']
     text_column = config['text_column']
-
 
 class ProcessorClass:
 

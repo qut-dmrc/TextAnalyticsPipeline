@@ -7,7 +7,8 @@ Key functionalities of the Text Analytics Pipeline include:
 1. **Named Entity Recognition (NER)**: Automatically identifies and categorizes entities such as names of people, places and organizations within the text.
 2. **Part of Speech Tagging (POS)**: Assigns grammatical parts of speech to each word in the text.
 3. **Dependency Parsing**: Analyzes the grammatical structure of sentences, establishing relationships between words and their dependencies.
-4. **TBC - sentiment analysis?**
+4. **Morphological Analysis**: Identifies the base forms of words, their parts of speech, and their inflectional forms.
+5. **Sentiment Analysis**: Determines the overall sentiment of a document.
 
 The pipeline executes these processes andReadme transfers the cleaned and structured data to a designated Google BigQuery database.
 ###

@@ -1,7 +1,7 @@
 # Google BigQuery Params
 
 servicekey_path: ''                             # Path to Google BigQuery Credentials
-project_name: 'my-project'                      # Name of your Google BigQuery project
+project_name: 'my-gbq-project'                  # Name of your Google BigQuery project
 dataset_name: 'cool_dataset'                    # Name of dataset containing the table to be analysed, also the destination dataset for the output table
 tablename: 'my_preprocessed_documents'          # Name of table containing the documents to be analysed, the process name will be appended to this name to generate a new table for e.g. _named_entities
 
@@ -11,14 +11,13 @@ text_column: 'comment_text'                     # Name of the column containing 
 from_database: True                             # Set to True if you want to analyse a table in Google BigQuery, otherwise set to False
 from_csv: False                                 # Set to True if you want to analyse a csv file, otherwise set to False
 
-
-# Pipeline Params
-
 language: 'en'                                  # Language of the documents to be analysed (see below for supported languages)
 
 named_entity_recognition: False                 # Set to True if you want to extract named entities from the text, otherwise set to False
 part_of_speech: True                            # Set to True if you want to extract part of speech tags from the text and run dependency parsing, otherwise set to False
+dependency_parsing: False                       # Set to True if you want to run dependency parsing on the text, otherwise set to False
 sentiment: False                                # Set to True if you want to extract sentiment from the text, otherwise set to False
+morphology: False                               # Set to True if you want to extract morphology from the text, otherwise set to False
 
 stanza: True                                    # Set to True if you want to use stanza, otherwise set to False
 spacy: False                                    # Set to True if you want to use spaCy, otherwise set to False

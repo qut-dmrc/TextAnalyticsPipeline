@@ -4,14 +4,83 @@ output to BigQuery.
 '''
 
 import os
+import glob
+import pandas as pd
 
 from google.cloud import bigquery
 from google.cloud.bigquery.client import Client
 from google.cloud.exceptions import NotFound
 
-from .config import BigQuery
 from .set_up_logging import *
 
+
+class GBQCreds:
+
+    def get_gbq_creds(self, project):
+        # Get GBQ credentials from environment variables, or from local file in 'access_key' directory. If multiple keys exist, match with project id
+        try:
+            gbq_creds = os.environ['gbq_servicekey']
+            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
+        except:
+            # Check for Google access key; looks for .json service account key in the 'access_key' dir
+            servicekeypath = glob.glob(f'{os.getcwd()}/TextAnalyticsPipeline/access_key/*.json')
+
+            if len(servicekeypath) > 0:
+                for potential_key in servicekeypath:
+                    with open(potential_key, 'r') as f:
+                        contents = f.read()
+                        if f'"project_id": "{project}"' in contents:
+                            gbq_creds = potential_key
+                            os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = gbq_creds
+                            break
+                        # If no matching key found, exit
+                        else:
+                            logging.info('No compatible Google BigQuery credentials found in /access_key. Exiting.')
+                            exit()
+            else:
+                logging.info('No Google BigQuery credentials found in /access_key. Exiting.')
+                exit()
+
+
+    def get_client(self, project):
+        client = bigquery.Client()
+        bq = Client(project=project)
+
+        return bq
+
+class QueryGBQ:
+    def query_gbq(self, logging, table, query_string, bq, dataset, text_column):
+        # Run query and save to dataframe
+        try:
+            logging.info(f"Querying '{table}' table...")
+            df = (bq.query(query_string).result().to_dataframe()).dropna(subset=text_column)
+            n_docs = len(df)
+            logging.info(query_string)
+            logging.info("Query successful\n")
+        except exceptions.NotFound:
+            logging.info(f"Table '{table}' not found in dataset '{dataset}'. Unable to query non-existent database. Exiting.")
+            exit()
+
+        return n_docs, df
+
+    def read_csv_from_file(self, logging):
+        # Read csv from /input_csv/ directory into dataframe
+        csv_path = './TextAnalyticsPipeline/input_csv/'
+        # Glob to locate csv file
+        input_csv = glob.glob(csv_path + '*.csv')[0]  # Set to [0] for now, TODO accept multiple input files
+        if len(input_csv) > 0:
+            try:
+                df = pd.read_csv(input_csv)
+                n_docs = len(df)
+                logging.info(f"Loaded '{input_csv}' from input directory.\n")
+            except FileNotFoundError:
+                logging.info(f"File '{input_csv}' not found. Exiting.")
+                exit()
+        else:
+            logging.info(f"No csv files found in '{csv_path}'. Exiting.")
+            exit()
+
+        return n_docs, df
 
 class Schema:
 
@@ -150,22 +219,37 @@ class Schema:
 
 class PushTables:
 
-    def push_to_gbq(self, database_import, bq, project, dataset, table, table_schema, library, proc):
+    def prepare_chunk_for_push(self, result_dfs, processor_name, library):
+        dfs_concat = [inner_list[0] for inner_list in result_dfs]
+        results_dfs_concat = pd.concat(dfs_concat, ignore_index=True)
 
-        dataset = f"{project}.{dataset}"
+        # Write results_dfs_concat to csv
+        logging.info(f'Writing {processor_name} output to csv...')
+
+        results_dfs_concat.to_csv(
+            f'TextAnalyticsPipeline/temp/temp_{processor_name}_{library}.csv',
+            encoding='utf-8',
+            index=False
+        )
+
+    def push_to_gbq(self, database_import, bq, project, dataset, table, table_schema, library, logging, proc):
+
+        logging.info(f'Checking if dataset {dataset} exists...')
+
+        dataset = f'{project}.{dataset}'
         schema = table_schema
 
         # Create dataset if does not exist
         try:
             bq.get_dataset(dataset)  # Make an API request.
-            logging.info(f"Dataset {dataset} already exists")
+            logging.info(f'Dataset {dataset} already exists. Pushing to existing dataset...')
         except NotFound:
-            logging.info(f"Dataset {dataset} is not found")
+            logging.info(f'Dataset {dataset} is not found. Creating new dataset.')
             bq.create_dataset(dataset)
-            logging.info(f"Created new dataset: {dataset}")
+            logging.info(f'Created new dataset: {dataset}.')
 
         if os.path.isfile(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv') == True:
-            logging.info('Pushing temp file to BigQuery dataset...')
+            logging.info(f'Pushing {proc} to BigQuery dataset: {dataset}...')
 
             table_id = bigquery.Table(f'{dataset}.{table}')
             try:
@@ -202,9 +286,12 @@ class PushTables:
                 job = bq.load_table_from_file(fh, f'{dataset}.{table}_{library}_{suff}', job_config=job_config)
                 job.result()  # Waits for the job to complete.
 
+
             table = bq.get_table(table_id)
             logging.info(
                 f"Loaded records rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}_{library}_{suff}")
                 # Todo (Records)
 
             os.remove(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv')
+
+            logging.info(f'Results of {proc} successfully pushed to BigQuery!\n')
