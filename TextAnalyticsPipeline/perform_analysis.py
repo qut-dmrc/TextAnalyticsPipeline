@@ -121,10 +121,10 @@ def run_text_pipeline():
 
 
     # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
-    # chunk = find_optimal_chunk_size(
-    #     n_docs
-    # )
-    chunk = 20
+    chunk = find_optimal_chunk_size(
+        n_docs
+    )
+    # chunk = 20
 
     # Get identifiers and documents from dataframe
     identifiers = df[id_column].tolist()
