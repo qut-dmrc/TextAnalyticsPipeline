@@ -269,6 +269,8 @@ class PushTables:
             job_config.allow_quoted_newlines = True
 
             with open(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv', 'rb') as fh:
+                records = sum(1 for line in fh)
+                fh.seek(0)
                 if database_import == True:
                     if table_schema == Schema.ner_schema:
                         suff = 'named_entities'
@@ -289,7 +291,7 @@ class PushTables:
 
             table = bq.get_table(table_id)
             logging.info(
-                f"Loaded records rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}_{library}_{suff}")
+                f"Loaded {records} rows and {len(table.schema)} columns to {table.project}.{table.dataset_id}.{table.table_id}_{library}_{suff}")
                 # Todo (Records)
 
             os.remove(f'TextAnalyticsPipeline/temp/temp_{proc}_{library}.csv')
