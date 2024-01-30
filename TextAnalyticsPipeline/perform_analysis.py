@@ -27,8 +27,8 @@ from .bigquery_tools import GBQCreds, QueryGBQ
 from .set_up_logging import set_up_logging
 from .validate_params import ValidateParams
 
-from .stanza import run_stanza_pipeline
-from .spacy import run_spacy_pipeline
+from .stanza_pipe import run_stanza_pipeline
+from .spacy_pipe import run_spacy_pipeline
 
 
 def get_processor_params():
