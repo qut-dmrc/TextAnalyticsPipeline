@@ -114,6 +114,8 @@ def run_text_pipeline():
             SELECT DISTINCT
             {id_column}, {text_column}
             FROM `{project}.{dataset}.{table}`
+            ORDER BY rand()
+            LIMIT 5
             """
         n_docs, df = gbqq.query_gbq(logging, table, query_string, bq, dataset, text_column)
     else:
