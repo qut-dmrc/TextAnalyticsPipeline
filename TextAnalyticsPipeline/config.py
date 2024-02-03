@@ -20,19 +20,7 @@ except yaml.YAMLError:
     print("\nDetected an issue with your config.")
 
 
-class BigQuery:
-    try:
-        gbq_creds = os.environ['gbq_servicekey']
-    except KeyError:
-        pass
-
-    project_name = config['project_name']
-    dataset_name = config['dataset_name']
-    tablename = config['tablename']
-
 class InputConf:
-    from_database = config['from_database']
-    from_csv = config['from_csv']
     id_column = config['id_column']
     text_column = config['text_column']
 

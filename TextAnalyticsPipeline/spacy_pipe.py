@@ -1,12 +1,16 @@
 import spacy
 import pandas as pd
+import os
 
 from .bigquery_tools import Schema, PushTables
 from .data_processor import ProcessResults
 
-def run_spacy_pipeline(chunk, n_docs, bq, identifiers, documents, lang, library, processor_class, processor_name, logging, database_import, project, dataset, table, result_dfs):
+def run_spacy_pipeline(chunk, n_docs, identifiers, documents, lang, library, processor_class, processor_name, logging, result_dfs):
     # Initialize the Spacy model
     nlp = spacy.load(f'{lang}_core_web_lg')
+
+    cdd = os.getcwd()
+    csv_file_path = f'{cdd}/TextAnalyticsPipeline/output_csv/{processor_name}_{library}.csv'
 
     if processor_name == 'ner':
 
@@ -58,30 +62,16 @@ def run_spacy_pipeline(chunk, n_docs, bq, identifiers, documents, lang, library,
                 # Run processor
                 entities_df = result_processor.process_ner(id, df)
 
-                # Append results
-                result_dfs.append([entities_df])
+                # Check if the CSV file already exists
+                if os.path.isfile(csv_file_path):
+                    print('Appending results to existing CSV file')
 
-                # Check len of result_dfs and if len(result_dfs) == chunk, push chunk to BigQuery
-                if len(result_dfs) == chunk or count > n_docs - chunk:
-                    push_tables = PushTables()
-
-                    push_tables.prepare_chunk_for_push(result_dfs, processor_name, library)
-
-                    # Push results_dfs_concat to BigQuery
-                    push_tables.push_to_gbq(
-                        database_import,
-                        bq,
-                        project,
-                        dataset,
-                        table,
-                        table_schema,
-                        library,
-                        logging,
-                        proc=processor_name
-                    )
-
-                    # Reset result_dfs
-                    result_dfs = []
+                    # Append to existing CSV
+                    entities_df.to_csv(csv_file_path, mode='a', header=False, index=False)
+                else:
+                    print('Writing results to new CSV file')
+                    # Write a new CSV file
+                    entities_df.to_csv(csv_file_path, index=False)
 
             else:
                 logging.info('No entities found in document.\n')
@@ -137,30 +127,19 @@ def run_spacy_pipeline(chunk, n_docs, bq, identifiers, documents, lang, library,
             # Run processor
             pos_df = result_processor.process_pos(id, df)
 
-            # Append results
-            result_dfs.append([pos_df])
+            # Check if the CSV file already exists
+            if os.path.isfile(csv_file_path):
+                print('Appending results to existing CSV file')
 
-            # Check len of result_dfs and if len(result_dfs) == chunk, push chunk to BigQuery
-            if len(result_dfs) == chunk or count > n_docs - chunk:
-                push_tables = PushTables()
+                # Append to existing CSV
+                pos_df.to_csv(csv_file_path, mode='a', header=False, index=False)
+            else:
+                print('Writing results to new CSV file')
+                # Write a new CSV file
+                pos_df.to_csv(csv_file_path, index=False)
 
-                push_tables.prepare_chunk_for_push(result_dfs, processor_name, library)
-
-                # Push results_dfs_concat to BigQuery
-                push_tables.push_to_gbq(
-                    database_import,
-                    bq,
-                    project,
-                    dataset,
-                    table,
-                    table_schema,
-                    library,
-                    logging,
-                    proc=processor_name
-                )
-
-                # Reset result_dfs
-                result_dfs = []
+        else:
+            logging.info('No entities found in document.\n')
 
     elif processor_name == 'depparse':
 
@@ -222,30 +201,19 @@ def run_spacy_pipeline(chunk, n_docs, bq, identifiers, documents, lang, library,
             # Run processor
             depparse_df = result_processor.process_depparse(id, df)
 
-            # Append results
-            result_dfs.append([depparse_df])
+            # Check if the CSV file already exists
+            if os.path.isfile(csv_file_path):
+                print('Appending results to existing CSV file')
 
-            # Check len of result_dfs and if len(result_dfs) == chunk, push chunk to BigQuery
-            if len(result_dfs) == chunk or count > n_docs - chunk:
-                push_tables = PushTables()
+                # Append to existing CSV
+                depparse_df.to_csv(csv_file_path, mode='a', header=False, index=False)
+            else:
+                print('Writing results to new CSV file')
+                # Write a new CSV file
+                depparse_df.to_csv(csv_file_path, index=False)
 
-                push_tables.prepare_chunk_for_push(result_dfs, processor_name, library)
-
-                # Push results_dfs_concat to BigQuery
-                push_tables.push_to_gbq(
-                    database_import,
-                    bq,
-                    project,
-                    dataset,
-                    table,
-                    table_schema,
-                    library,
-                    logging,
-                    proc=processor_name
-                )
-
-                # Reset result_dfs
-                result_dfs = []
+        else:
+            logging.info('No entities found in document.\n')
 
     elif processor_name == 'morphology':
 
@@ -318,30 +286,16 @@ def run_spacy_pipeline(chunk, n_docs, bq, identifiers, documents, lang, library,
             # Run processor
             morphology_df = result_processor.process_morphology(id, df)
 
-            # Append results
-            result_dfs.append([morphology_df])
+            # Check if the CSV file already exists
+            if os.path.isfile(csv_file_path):
+                print('Appending results to existing CSV file')
 
-            # Check len of result_dfs and if len(result_dfs) == chunk, push chunk to BigQuery
-            if len(result_dfs) == chunk or count > n_docs - chunk:
-                push_tables = PushTables()
-
-                push_tables.prepare_chunk_for_push(result_dfs, processor_name, library)
-
-                # Push results_dfs_concat to BigQuery
-                push_tables.push_to_gbq(
-                    database_import,
-                    bq,
-                    project,
-                    dataset,
-                    table,
-                    table_schema,
-                    library,
-                    logging,
-                    proc=processor_name
-                )
-
-                # Reset result_dfs
-                result_dfs = []
+                # Append to existing CSV
+                morphology_df.to_csv(csv_file_path, mode='a', header=False, index=False)
+            else:
+                print('Writing results to new CSV file')
+                # Write a new CSV file
+                morphology_df.to_csv(csv_file_path, index=False)
 
     else:
         result_dfs = None

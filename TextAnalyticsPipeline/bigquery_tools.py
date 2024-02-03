@@ -48,20 +48,7 @@ class GBQCreds:
 
         return bq
 
-class QueryGBQ:
-    def query_gbq(self, logging, table, query_string, bq, dataset, text_column):
-        # Run query and save to dataframe
-        try:
-            logging.info(f"Querying '{table}' table...")
-            df = (bq.query(query_string).result().to_dataframe()).dropna(subset=text_column)
-            n_docs = len(df)
-            logging.info(query_string)
-            logging.info("Query successful\n")
-        except exceptions.NotFound:
-            logging.info(f"Table '{table}' not found in dataset '{dataset}'. Unable to query non-existent database. Exiting.")
-            exit()
-
-        return n_docs, df
+class GetCSVFiles:
 
     def read_csv_from_file(self, logging):
         # Read csv from /input_csv/ directory into dataframe

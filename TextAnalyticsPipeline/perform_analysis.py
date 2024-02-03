@@ -17,15 +17,12 @@ import logging
 import glob
 import pandas as pd
 
-from google.cloud import bigquery
-from google.cloud.bigquery.client import Client
-from google.api_core import exceptions
+
 
 # local imports
-from .config import BigQuery, InputConf, ProcessorClass, Language, Library
-from .bigquery_tools import GBQCreds, QueryGBQ
 from .set_up_logging import set_up_logging
-from .validate_params import ValidateParams
+from .config import ProcessorClass, Language, Library, InputConf
+from .bigquery_tools import GetCSVFiles
 
 from .stanza_pipe import run_stanza_pipeline
 from .spacy_pipe import run_spacy_pipeline
@@ -48,18 +45,13 @@ def get_processor_params():
 
 def get_input_params():
     # Initialize config classes
-    gbq = BigQuery()
     inp = InputConf()
 
     # Get config details from config classes
-    project = gbq.project_name
-    dataset = gbq.dataset_name
-    table = gbq.tablename
     id_column = inp.id_column
     text_column = inp.text_column
-    database_import = inp.from_database
 
-    return project, dataset, table, id_column, text_column, database_import
+    return id_column, text_column
 
 def find_optimal_chunk_size(a, min_chunk_size=5000, max_chunk_size=10000):
     '''
@@ -89,37 +81,14 @@ def run_text_pipeline():
 
     # Get processor and input parameters from config.yml
     processor_class, processor_name, lang, library = get_processor_params()
-    project, dataset, table, id_column, text_column, database_import = get_input_params()
+    id_column, text_column = get_input_params()
 
     # Set up logging (see set_up_logging.py)
     set_up_logging('TextAnalyticsPipeline/logs', library, processor_name)
 
-    # Get Google BigQuery credentials
-    gbq_creds = GBQCreds()
-    gbq_creds.get_gbq_creds(project)
-
-    # Initialise BigQuery client
-    bq = gbq_creds.get_client(project)
-
-    # Validate GBQ parameters
-    vdp = ValidateParams()
-    project, dataset, table = vdp.validate_project_parameters(project, dataset, table, bq)
-
-
-    # If database_import is True, query BigQuery table. If False, read csv into dataframe
-    gbqq = QueryGBQ()
-    if database_import == True:
-        # Prepare SQL query
-        query_string = f"""
-            SELECT DISTINCT
-            {id_column}, {text_column}
-            FROM `{project}.{dataset}.{table}`
-            ORDER BY rand()
-            LIMIT 5
-            """
-        n_docs, df = gbqq.query_gbq(logging, table, query_string, bq, dataset, text_column)
-    else:
-        n_docs, df = gbqq.read_csv_from_file(logging)
+    gbqq = GetCSVFiles()
+    # Read documents from csv
+    n_docs, df = gbqq.read_csv_from_file(logging)
 
 
     # Specify a chunk size so that when result_dfs reaches chunk size, it is pushed to BigQuery
@@ -139,7 +108,6 @@ def run_text_pipeline():
         run_stanza_pipeline(
             chunk,
             n_docs,
-            bq,
             identifiers,
             documents,
             lang,
@@ -147,10 +115,6 @@ def run_text_pipeline():
             processor_class,
             processor_name,
             logging,
-            database_import,
-            project,
-            dataset,
-            table,
             result_dfs
         )
 
@@ -158,7 +122,6 @@ def run_text_pipeline():
         run_spacy_pipeline(
             chunk,
             n_docs,
-            bq,
             identifiers,
             documents,
             lang,
@@ -166,10 +129,6 @@ def run_text_pipeline():
             processor_class,
             processor_name,
             logging,
-            database_import,
-            project,
-            dataset,
-            table,
             result_dfs
         )
 
@@ -177,7 +136,6 @@ def run_text_pipeline():
         run_nltk_pipeline(
             chunk,
             n_docs,
-            bq,
             identifiers,
             documents,
             lang,
@@ -185,10 +143,6 @@ def run_text_pipeline():
             processor_class,
             processor_name,
             logging,
-            database_import,
-            project,
-            dataset,
-            table,
             result_dfs
         )
 
@@ -196,7 +150,6 @@ def run_text_pipeline():
         run_corenlp_pipeline(
             chunk,
             n_docs,
-            bq,
             identifiers,
             documents,
             lang,
@@ -204,10 +157,6 @@ def run_text_pipeline():
             processor_class,
             processor_name,
             logging,
-            database_import,
-            project,
-            dataset,
-            table,
             result_dfs
         )
 
