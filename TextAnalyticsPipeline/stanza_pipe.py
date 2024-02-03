@@ -7,6 +7,7 @@ from .data_processor import ProcessResults
 
 def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, processor_class, processor_name, logging, result_dfs):
     # Initialize the Stanza model
+    stanza.download('en')
     nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,mwt,{processor_class}', download_method=None)
 
     cdd = os.getcwd()
