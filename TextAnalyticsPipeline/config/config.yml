@@ -1,0 +1,15 @@
+
+id_column: 'article_id'
+text_column: 'content'
+
+language: 'en'
+
+named_entity_recognition: False
+part_of_speech: True
+dependency_parsing: False
+sentiment: False
+morphology: False
+
+stanza: True
+spacy: False
+nltk: False
