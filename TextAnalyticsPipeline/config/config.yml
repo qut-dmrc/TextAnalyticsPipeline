@@ -12,4 +12,4 @@ morphology: False
 
 stanza: True
 spacy: False
-nltk: False
+
