@@ -7,6 +7,8 @@ language: 'en'
 named_entity_recognition: True
 part_of_speech: False
 dependency_parsing: False
+morphology: False
+sentiment: False
 
 stanza: True
 spacy: False
