@@ -28,6 +28,8 @@ The pipeline executes these processes andReadme transfers the cleaned and struct
 2. Configure your virtual environment and install the required packages using the following command:
    pip `install -r requirements.txt`
 3. `git checkout workshop_branch`. Always push to this branch.
+4. You will need to download the required models for the libraries you want to use. For example, if you want to use spaCy, you will need to download the spaCy model for your language. You can do this by running the following command:
+   `python -m spacy download en_core_web_sm` or `python -m stanza.download en`
 ###
 ### Usage
    1. Ensure your csv file is pre-processed and ready for analysis.
@@ -60,5 +62,4 @@ Todo
 Todo
 ###
 ### Collaborators
-Ensure you git checkout collab_branch before you start working on the project.
-When you are done, push your changes to the collab_branch.
+Todo
