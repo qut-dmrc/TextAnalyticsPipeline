@@ -7,9 +7,9 @@ import os
 import glob
 import pandas as pd
 
-from google.cloud import bigquery
-from google.cloud.bigquery.client import Client
-from google.cloud.exceptions import NotFound
+# from google.cloud import bigquery
+# from google.cloud.bigquery.client import Client
+# from google.cloud.exceptions import NotFound
 
 from .set_up_logging import *
 
@@ -72,13 +72,13 @@ class GetCSVFiles:
 class Schema:
 
     # Named Entity Recognition schema
-    ner_schema = [
-        bigquery.SchemaField("identifier", "STRING", mode="REQUIRED", description="Identifier for the record"),
-        bigquery.SchemaField("text", "STRING", mode="NULLABLE", description="Named entity text"),
-        bigquery.SchemaField("type", "STRING", mode="NULLABLE", description="Named entity type"),
-        bigquery.SchemaField("start_char", "INTEGER", mode="NULLABLE", description="Location of start character of entity in input string."),
-        bigquery.SchemaField("end_char", "INTEGER", mode="NULLABLE", description="Location of end character of entity in input string.")
-    ]
+    # ner_schema = [
+    #     bigquery.SchemaField("identifier", "STRING", mode="REQUIRED", description="Identifier for the record"),
+    #     bigquery.SchemaField("text", "STRING", mode="NULLABLE", description="Named entity text"),
+    #     bigquery.SchemaField("type", "STRING", mode="NULLABLE", description="Named entity type"),
+    #     bigquery.SchemaField("start_char", "INTEGER", mode="NULLABLE", description="Location of start character of entity in input string."),
+    #     bigquery.SchemaField("end_char", "INTEGER", mode="NULLABLE", description="Location of end character of entity in input string.")
+    # ]
 
     # Column order for Named Entity Recognition table
     ner_column_order = [
@@ -90,18 +90,18 @@ class Schema:
     ]
 
     # Part of Speech Tagging schema
-    pos_schema = [
-        bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
-        bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
-        bigquery.SchemaField('word_num', 'INTEGER', description='Word number in the sentence'),
-        bigquery.SchemaField('word_id', 'STRING', description='Word identifier'),
-        bigquery.SchemaField('word', 'STRING', description='Word text'),
-        bigquery.SchemaField('lemma', 'STRING', description='Lemma of the word'),
-        bigquery.SchemaField('upos', 'STRING', description='Universal Part-of-Speech tag'),
-        bigquery.SchemaField('xpos', 'STRING', description='Language-specific Part-of-Speech tag'),
-        bigquery.SchemaField('start_char', 'INTEGER', description='Start character position in text'),
-        bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text'),
-    ]
+    # pos_schema = [
+    #     bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
+    #     bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
+    #     bigquery.SchemaField('word_num', 'INTEGER', description='Word number in the sentence'),
+    #     bigquery.SchemaField('word_id', 'STRING', description='Word identifier'),
+    #     bigquery.SchemaField('word', 'STRING', description='Word text'),
+    #     bigquery.SchemaField('lemma', 'STRING', description='Lemma of the word'),
+    #     bigquery.SchemaField('upos', 'STRING', description='Universal Part-of-Speech tag'),
+    #     bigquery.SchemaField('xpos', 'STRING', description='Language-specific Part-of-Speech tag'),
+    #     bigquery.SchemaField('start_char', 'INTEGER', description='Start character position in text'),
+    #     bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text'),
+    # ]
 
     # Column order for Part of Speech Tagging table
     pos_column_order = [
@@ -118,23 +118,23 @@ class Schema:
         ]
 
     # Dependency Parsing schema
-    depparse_schema = [
-        bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
-        bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
-        bigquery.SchemaField('word_num', 'INTEGER', description='Source word identifier'),
-        bigquery.SchemaField('word_id', 'STRING', description='Source word identifier'),
-        bigquery.SchemaField('word_text', 'STRING', description='Source word text'),
-        bigquery.SchemaField('word_lemma', 'STRING', description='Source word lemma'),
-        bigquery.SchemaField('word_start_char', 'INTEGER', description='Start character position in text'),
-        bigquery.SchemaField('word_end_char', 'INTEGER', description='End character position in text'),
-        bigquery.SchemaField('relation', 'STRING', description='Dependency relation'),
-        bigquery.SchemaField('head_num', 'STRING', description='Target word identifier'),
-        bigquery.SchemaField('head_id', 'STRING', description='Target word identifier'),
-        bigquery.SchemaField('head_text', 'STRING', description='Target word text'),
-        bigquery.SchemaField('head_lemma', 'STRING', description='Target word lemma'),
-        bigquery.SchemaField('head_start_char', 'INTEGER', description='Target word start character position'),
-        bigquery.SchemaField('head_end_char', 'INTEGER', description='Target word end character position')
-    ]
+    # depparse_schema = [
+    #     bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
+    #     bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
+    #     bigquery.SchemaField('word_num', 'INTEGER', description='Source word identifier'),
+    #     bigquery.SchemaField('word_id', 'STRING', description='Source word identifier'),
+    #     bigquery.SchemaField('word_text', 'STRING', description='Source word text'),
+    #     bigquery.SchemaField('word_lemma', 'STRING', description='Source word lemma'),
+    #     bigquery.SchemaField('word_start_char', 'INTEGER', description='Start character position in text'),
+    #     bigquery.SchemaField('word_end_char', 'INTEGER', description='End character position in text'),
+    #     bigquery.SchemaField('relation', 'STRING', description='Dependency relation'),
+    #     bigquery.SchemaField('head_num', 'STRING', description='Target word identifier'),
+    #     bigquery.SchemaField('head_id', 'STRING', description='Target word identifier'),
+    #     bigquery.SchemaField('head_text', 'STRING', description='Target word text'),
+    #     bigquery.SchemaField('head_lemma', 'STRING', description='Target word lemma'),
+    #     bigquery.SchemaField('head_start_char', 'INTEGER', description='Target word start character position'),
+    #     bigquery.SchemaField('head_end_char', 'INTEGER', description='Target word end character position')
+    # ]
 
     # Column order for Dependency Parsing table
     depparse_column_order = [
@@ -156,29 +156,29 @@ class Schema:
     ]
 
     # Morphology schema
-    morphology_schema = [
-        bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
-        bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
-        bigquery.SchemaField('word_num', 'INTEGER', description='Word number in the sentence'),
-        bigquery.SchemaField('word_id', 'STRING', description='Word identifier'),
-        bigquery.SchemaField('word', 'STRING', description='Word text'),
-        bigquery.SchemaField('lemma', 'STRING', description='Lemma of the word'),
-        bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
-        bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
-        bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
-        bigquery.SchemaField('features_Tense', 'STRING', description='Tense feature'),
-        bigquery.SchemaField('features_VerbForm', 'STRING', description='Verb form feature'),
-        bigquery.SchemaField('features_Case', 'STRING', description='Case feature'),
-        bigquery.SchemaField('features_Gender', 'STRING', description='Gender feature'),
-        bigquery.SchemaField('features_PronType', 'STRING', description='Pronoun type feature'),
-        bigquery.SchemaField('features_Degree', 'STRING', description='Degree feature'),
-        bigquery.SchemaField('features_Definite', 'STRING', description='Definite feature'),
-        bigquery.SchemaField('features_NumForm', 'STRING', description='Number form feature'),
-        bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
-        bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature'),
-        bigquery.SchemaField('start_char', 'INTEGER', description='Start character position in text'),
-        bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text')
-    ]
+    # morphology_schema = [
+    #     bigquery.SchemaField('identifier', 'STRING', description='Identifier for the record'),
+    #     bigquery.SchemaField('sentence_num', 'INTEGER', description='Sentence number'),
+    #     bigquery.SchemaField('word_num', 'INTEGER', description='Word number in the sentence'),
+    #     bigquery.SchemaField('word_id', 'STRING', description='Word identifier'),
+    #     bigquery.SchemaField('word', 'STRING', description='Word text'),
+    #     bigquery.SchemaField('lemma', 'STRING', description='Lemma of the word'),
+    #     bigquery.SchemaField('features_Number', 'STRING', description='Number feature'),
+    #     bigquery.SchemaField('features_Mood', 'STRING', description='Mood feature'),
+    #     bigquery.SchemaField('features_Person', 'STRING', description='Person feature'),
+    #     bigquery.SchemaField('features_Tense', 'STRING', description='Tense feature'),
+    #     bigquery.SchemaField('features_VerbForm', 'STRING', description='Verb form feature'),
+    #     bigquery.SchemaField('features_Case', 'STRING', description='Case feature'),
+    #     bigquery.SchemaField('features_Gender', 'STRING', description='Gender feature'),
+    #     bigquery.SchemaField('features_PronType', 'STRING', description='Pronoun type feature'),
+    #     bigquery.SchemaField('features_Degree', 'STRING', description='Degree feature'),
+    #     bigquery.SchemaField('features_Definite', 'STRING', description='Definite feature'),
+    #     bigquery.SchemaField('features_NumForm', 'STRING', description='Number form feature'),
+    #     bigquery.SchemaField('features_NumType', 'STRING', description='Number type feature'),
+    #     bigquery.SchemaField('features_Voice', 'STRING', description='Voice feature'),
+    #     bigquery.SchemaField('start_char', 'INTEGER', description='Start character position in text'),
+    #     bigquery.SchemaField('end_char', 'INTEGER', description='End character position in text')
+    # ]
 
     morphology_column_order = [
         'identifier',
