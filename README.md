@@ -13,7 +13,7 @@ The pipeline executes these processes andReadme transfers the cleaned and struct
 ###
 ### Requirements
 - Python 3.10 or newer
-- A csv file to be analysed, placed in the `/input_csv` directory (specify `from_database: True` in your `config.yml` file) - sample exists in this location.
+- A csv file to be analysed, placed in the `/input_csv` directory (specify `from_database: False` in your `config.yml` file) - sample exists in this location.
 
    | document_id | document_text                                                                                                          |
    |------------------------------------------------------------------------------------------------------------------------| -------------- |
