@@ -75,7 +75,7 @@ def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, pr
     elif processor_name == 'pos':
 
         # Set table schema
-        table_schema = Schema.pos_schema
+        # table_schema = Schema.pos_schema
 
         logging.info('Processing documents for part-of-speech extraction...')
 
@@ -124,7 +124,7 @@ def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, pr
     elif processor_name == 'depparse':
 
         # Set table schema
-        table_schema = Schema.depparse_schema
+        # table_schema = Schema.depparse_schema
 
         logging.info('Processing documents for dependency parsing...')
 
