@@ -27,13 +27,9 @@ The pipeline executes these processes andReadme transfers the cleaned and struct
 1. Clone the repository `git clone https://github.com/qut-dmrc/TextAnalyticsPipeline.git`
 2. Configure your virtual environment and install the required packages using the following command:
    pip `install -r requirements.txt`
-3. `git checkout workshop_branch`. Always push to this branch.
-4. You will need to download the required models for the libraries you want to use. For example, if you want to use spaCy, you will need to download the spaCy model for your language. You can do this by running the following command:
-   `python -m spacy download en_core_web_lg` or `python -m stanza.download('en')`
-5. If working offline, models can be downloaded from the below links, and following the instructions (these are the English models):
-   - Stanza: `https://stanfordnlp.github.io/stanza/download_models.html`
-   - spaCy: `https://huggingface.co/spacy/en_core_web_lg`
-   - NLTK: tbc
+3. `git checkout online_demo_branch`. Always push to this branch if working in this branch.
+
+
 ###
 ### Usage
    1. Ensure your csv file is pre-processed and ready for analysis.

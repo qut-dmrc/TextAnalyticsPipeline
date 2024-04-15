@@ -8,7 +8,7 @@ from .data_processor import ProcessResults
 def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, processor_class, processor_name, logging, result_dfs):
     # Initialize the Stanza model
     # stanza.download('en')
-    nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,mwt,{processor_class}', download_method=None)
+    nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,mwt,{processor_class}')
 
     cdd = os.getcwd()
     csv_file_path = f'{cdd}/TextAnalyticsPipeline/output_csv/{processor_name}_{library}.csv'
@@ -75,7 +75,7 @@ def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, pr
     elif processor_name == 'pos':
 
         # Set table schema
-        table_schema = Schema.pos_schema
+        # table_schema = Schema.pos_schema
 
         logging.info('Processing documents for part-of-speech extraction...')
 
@@ -124,7 +124,7 @@ def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, pr
     elif processor_name == 'depparse':
 
         # Set table schema
-        table_schema = Schema.depparse_schema
+        # table_schema = Schema.depparse_schema
 
         logging.info('Processing documents for dependency parsing...')
 
