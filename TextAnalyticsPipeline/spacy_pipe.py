@@ -15,7 +15,7 @@ def run_spacy_pipeline(chunk, n_docs, identifiers, documents, lang, library, pro
     if processor_name == 'ner':
 
         # Set table schema
-        table_schema = Schema.ner_schema
+        # table_schema = Schema.ner_schema
 
         count = 0
         for id, document in zip(identifiers, documents):
@@ -79,7 +79,7 @@ def run_spacy_pipeline(chunk, n_docs, identifiers, documents, lang, library, pro
     elif processor_name == 'pos':
 
         # Set table schema
-        table_schema = Schema.pos_schema
+        # table_schema = Schema.pos_schema
 
         count = 0
         for id, document in zip(identifiers, documents):
@@ -139,12 +139,12 @@ def run_spacy_pipeline(chunk, n_docs, identifiers, documents, lang, library, pro
                 pos_df.to_csv(csv_file_path, index=False)
 
         else:
-            logging.info('No entities found in document.\n')
+            logging.info('No parts of speech found in document.\n')
 
     elif processor_name == 'depparse':
 
         # Set table schema
-        table_schema = Schema.depparse_schema
+        # table_schema = Schema.depparse_schema
 
         count = 0
         for id, document in zip(identifiers, documents):
@@ -213,12 +213,12 @@ def run_spacy_pipeline(chunk, n_docs, identifiers, documents, lang, library, pro
                 depparse_df.to_csv(csv_file_path, index=False)
 
         else:
-            logging.info('No entities found in document.\n')
+            logging.info('No dependencies found in document.\n')
 
     elif processor_name == 'morphology':
 
         # Set table schema
-        table_schema = Schema.morphology_schema
+        # table_schema = Schema.morphology_schema
 
         count = 0
         for id, document in zip(identifiers, documents):
