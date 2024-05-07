@@ -7,7 +7,14 @@ from .data_processor import ProcessResults
 
 def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, processor_class, processor_name, logging, result_dfs):
     # Initialize the Stanza model
-    # stanza.download('en')
+    if lang == 'en':
+        stanza.download('en')
+    elif lang == 'es':
+        stanza.download('es')
+    else:
+        print('Language not yet supported!')
+        exit()
+
     nlp = stanza.Pipeline(f'{lang}', processors=f'tokenize,mwt,{processor_class}')
 
     cdd = os.getcwd()

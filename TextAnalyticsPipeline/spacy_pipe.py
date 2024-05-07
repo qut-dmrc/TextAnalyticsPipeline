@@ -7,7 +7,16 @@ from .data_processor import ProcessResults
 
 def run_spacy_pipeline(chunk, n_docs, identifiers, documents, lang, library, processor_class, processor_name, logging, result_dfs):
     # Initialize the Spacy model
-    nlp = spacy.load(f'{lang}_core_web_lg')
+    if lang == 'en':
+        spacymodel = f'{lang}_core_web_lg'
+    elif lang == 'es':
+        spacymodel = f'{lang}_core_news_lg'
+    else:
+        print('Language not yet supported')
+        exit()
+
+    spacy.cli.download(spacymodel)
+    nlp = spacy.load(spacymodel)
 
     cdd = os.getcwd()
     csv_file_path = f'{cdd}/TextAnalyticsPipeline/output_csv/{processor_name}_{library}.csv'
