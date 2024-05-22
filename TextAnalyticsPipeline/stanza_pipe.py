@@ -210,7 +210,7 @@ def run_stanza_pipeline(chunk, n_docs, identifiers, documents, lang, library, pr
     elif processor_name == 'morphology':
 
         # Set table schema
-        table_schema = Schema.morphology_schema
+        # table_schema = Schema.morphology_schema
 
         logging.info('Processing documents for morphology extraction...')
 
