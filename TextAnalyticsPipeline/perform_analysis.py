@@ -26,6 +26,7 @@ from .bigquery_tools import GetCSVFiles
 
 from .stanza_pipe import run_stanza_pipeline
 from .spacy_pipe import run_spacy_pipeline
+from .nltk_pipe import run_nltk_pipeline
 
 
 def get_processor_params():
