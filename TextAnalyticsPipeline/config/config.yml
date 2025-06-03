@@ -11,5 +11,5 @@ sentiment: False                                # Set to True if you want to ext
 morphology: False                               # Set to True if you want to extract morphology from the text, otherwise set to False
 
 stanza: False                                    # Set to True if you want to use stanza, otherwise set to False
-spacy: True                                    # Set to True if you want to use spaCy, otherwise set to False
-nltk: False                                     # Set to True if you want to use NLTK, otherwise set to False
+spacy: False                                    # Set to True if you want to use spaCy, otherwise set to False
+nltk: True                                     # Set to True if you want to use NLTK, otherwise set to False
